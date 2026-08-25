@@ -1,0 +1,7 @@
+streamlit
+google-genai
+ddgs
+pypdf
+python-docx
+pillow
+SpeechRecognition
