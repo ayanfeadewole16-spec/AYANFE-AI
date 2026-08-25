@@ -1,133 +1,193 @@
-
 # ============================================
-# AYANFE AI V2 — PERSISTENT MEMORY
+# AYANFE AI V2 — DEPLOYMENT-SAFE MEMORY
 # ============================================
 
-import json
-import uuid
-from datetime import datetime, timezone
 from pathlib import Path
+import sqlite3
+import uuid
+from datetime import datetime
 
 
-PROJECT = Path("/content/drive/MyDrive/AYANFE_AI_V2")
-MEMORY_DIR = PROJECT / "memory"
-
+# Streamlit Cloud's project directory is read-only.
+# /tmp is writable during the running app.
+MEMORY_DIR = Path("/tmp/ayanfe_ai_memory")
 MEMORY_DIR.mkdir(parents=True, exist_ok=True)
+
+DB_PATH = MEMORY_DIR / "ayanfe_memory.db"
+
+
+def get_connection():
+    conn = sqlite3.connect(
+        str(DB_PATH),
+        check_same_thread=False
+    )
+
+    conn.row_factory = sqlite3.Row
+
+    return conn
+
+
+def initialize_database():
+
+    conn = get_connection()
+
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS chats (
+            chat_id TEXT PRIMARY KEY,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        )
+    """)
+
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS messages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            chat_id TEXT NOT NULL,
+            role TEXT NOT NULL,
+            content TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        )
+    """)
+
+    conn.commit()
+    conn.close()
 
 
 def create_chat():
-    """
-    Create a new conversation with a unique chat ID.
-    """
+
+    initialize_database()
 
     chat_id = str(uuid.uuid4())
+    now = datetime.now().isoformat()
 
-    chat = {
+    conn = get_connection()
+
+    conn.execute(
+        """
+        INSERT INTO chats
+        (chat_id, created_at, updated_at)
+        VALUES (?, ?, ?)
+        """,
+        (chat_id, now, now)
+    )
+
+    conn.commit()
+    conn.close()
+
+    return {
         "chat_id": chat_id,
-        "created_at": datetime.now(timezone.utc).isoformat(),
-        "updated_at": datetime.now(timezone.utc).isoformat(),
         "messages": []
     }
 
-    save_chat(chat)
 
-    return chat
+def add_message(chat_id, role, content):
 
+    initialize_database()
 
-def get_chat_path(chat_id):
-    return MEMORY_DIR / f"{chat_id}.json"
+    now = datetime.now().isoformat()
 
+    conn = get_connection()
 
-def save_chat(chat):
-    """
-    Save a complete conversation permanently.
-    """
+    conn.execute(
+        """
+        INSERT INTO messages
+        (chat_id, role, content, created_at)
+        VALUES (?, ?, ?, ?)
+        """,
+        (chat_id, role, content, now)
+    )
 
-    chat["updated_at"] = datetime.now(timezone.utc).isoformat()
+    conn.execute(
+        """
+        UPDATE chats
+        SET updated_at = ?
+        WHERE chat_id = ?
+        """,
+        (now, chat_id)
+    )
 
-    path = get_chat_path(chat["chat_id"])
-
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(chat, f, indent=2, ensure_ascii=False)
-
-    return True
+    conn.commit()
+    conn.close()
 
 
 def load_chat(chat_id):
-    """
-    Load an existing conversation.
-    """
 
-    path = get_chat_path(chat_id)
+    initialize_database()
 
-    if not path.exists():
-        return None
+    conn = get_connection()
 
-    with open(path, "r", encoding="utf-8") as f:
-        return json.load(f)
-
-
-def add_message(chat_id, role, content):
-    """
-    Add a user or assistant message to a conversation.
-    """
-
-    chat = load_chat(chat_id)
+    chat = conn.execute(
+        """
+        SELECT *
+        FROM chats
+        WHERE chat_id = ?
+        """,
+        (chat_id,)
+    ).fetchone()
 
     if chat is None:
+        conn.close()
         return None
 
-    chat["messages"].append({
-        "role": role,
-        "content": content,
-        "timestamp": datetime.now(timezone.utc).isoformat()
-    })
+    messages = conn.execute(
+        """
+        SELECT role, content, created_at
+        FROM messages
+        WHERE chat_id = ?
+        ORDER BY id ASC
+        """,
+        (chat_id,)
+    ).fetchall()
 
-    save_chat(chat)
+    conn.close()
 
-    return chat
+    return {
+        "chat_id": chat["chat_id"],
+        "created_at": chat["created_at"],
+        "updated_at": chat["updated_at"],
+        "messages": [
+            {
+                "role": message["role"],
+                "content": message["content"],
+                "created_at": message["created_at"]
+            }
+            for message in messages
+        ]
+    }
 
 
 def list_chats():
-    """
-    Return all saved conversations.
-    """
 
-    chats = []
+    initialize_database()
 
-    for path in MEMORY_DIR.glob("*.json"):
+    conn = get_connection()
 
-        try:
-            with open(path, "r", encoding="utf-8") as f:
-                chat = json.load(f)
+    chats = conn.execute(
+        """
+        SELECT
+            c.chat_id,
+            c.created_at,
+            c.updated_at,
+            COUNT(m.id) AS message_count
+        FROM chats c
+        LEFT JOIN messages m
+            ON c.chat_id = m.chat_id
+        GROUP BY c.chat_id
+        ORDER BY c.updated_at DESC
+        """
+    ).fetchall()
 
-            chats.append({
-                "chat_id": chat["chat_id"],
-                "created_at": chat.get("created_at"),
-                "updated_at": chat.get("updated_at"),
-                "message_count": len(chat.get("messages", []))
-            })
+    conn.close()
 
-        except Exception:
-            continue
-
-    chats.sort(
-        key=lambda x: x.get("updated_at", ""),
-        reverse=True
-    )
-
-    return chats
+    return [
+        {
+            "chat_id": chat["chat_id"],
+            "created_at": chat["created_at"],
+            "updated_at": chat["updated_at"],
+            "message_count": chat["message_count"]
+        }
+        for chat in chats
+    ]
 
 
-def delete_chat(chat_id):
-    """
-    Delete a conversation.
-    """
-
-    path = get_chat_path(chat_id)
-
-    if path.exists():
-        path.unlink()
-        return True
-
-    return False
+initialize_database()
