@@ -90,25 +90,34 @@ def local_response(user_message):
         return "I was created by Ayanfe."
 
 
-    # ----------------------------------------
-    # GREETINGS
-    # ----------------------------------------
+   # ----------------------------------------
+# GREETINGS / CASUAL CONVERSATION
+# ----------------------------------------
 
-    if clean in [
-        "hi",
-        "hello",
-        "hey",
-        "hi ayanfe",
-        "hello ayanfe",
-        "hey ayanfe"
-    ]:
+if clean in [
+    "hi",
+    "hello",
+    "hey",
+    "hi ayanfe",
+    "hello ayanfe",
+    "hey ayanfe",
+    "good morning",
+    "good afternoon",
+    "good evening",
+    "how are you",
+    "how are you?",
+    "how are you today",
+    "how are you today?",
+    "how is it going",
+    "how's it going",
+    "how are things"
+]:
 
-        return (
-            "Hello! 👋 I'm AYANFE AI. "
-            "What would you like to do today?"
-        )
-
-
+    return (
+        "I'm doing great! 😊 "
+        "I'm ready to help. What would you like "
+        "to do today?"
+    )
     # ----------------------------------------
     # CAPABILITIES
     # ----------------------------------------
