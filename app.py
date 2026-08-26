@@ -371,12 +371,7 @@ def fast_ayanfe_response(text):
     return None
 
 
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        padding: 10px 5%;
-        background: rgba(255,255,
+       
 # ============================================
 # AYANFE SMART LOCAL RESPONSE SYSTEM
 # ============================================
