@@ -306,16 +306,205 @@ if "prefill" in st.session_state:
     if st.session_state.prefill:
         placeholder = st.session_state.prefill
 
-user_input = st.chat_input(
-    placeholder
+# ============================================
+# AYANFE SMART LOCAL RESPONSE SYSTEM
+# ============================================
+
+def fast_ayanfe_response(text):
+    """
+    Handle simple requests without using Gemini.
+    Return None when a full AI response is needed.
+    """
+
+    clean = text.strip().lower()
+
+    # ----------------------------------------
+    # CREATOR / IDENTITY
+    # ----------------------------------------
+
+    if clean in [
+        "who created you?",
+        "who made you?",
+        "who built you?",
+        "who is your creator?",
+        "who created ayanfe?"
+    ]:
+        return (
+            "I was created by Ayanfe. "
+            "I am AYANFE AI, a modern general-purpose "
+            "AI assistant and learning companion."
+        )
+
+    # ----------------------------------------
+    # GREETINGS
+    # ----------------------------------------
+
+    if clean in [
+        "hi",
+        "hello",
+        "hey",
+        "hey ayanfe",
+        "hi ayanfe",
+        "hello ayanfe"
+    ]:
+        return (
+            "Hello! 👋 I'm AYANFE AI. "
+            "What would you like to do today?"
+        )
+
+    # ----------------------------------------
+    # CAPABILITIES
+    # ----------------------------------------
+
+    if clean in [
+        "what can you do?",
+        "what can you do",
+        "what are your features?",
+        "help"
+    ]:
+        return (
+            "I can help with education, writing, programming, "
+            "research, current information, sports, files, "
+            "YouTube, everyday questions and more."
+        )
+
+    return None
+
+
+# ============================================
+# COMPOSER STATE
+# ============================================
+
+if "show_attachments" not in st.session_state:
+    st.session_state.show_attachments = False
+
+
+# ============================================
+# FIXED AYANFE COMPOSER
+# ============================================
+
+st.markdown(
+    """
+    <style>
+    .ayanfe-composer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 10px 5%;
+        background: rgba(255,255,255,0.97);
+        border-top: 1px solid rgba(0,0,0,0.08);
+        z-index: 999;
+    }
+
+    .main .block-container {
+        padding-bottom: 120px;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
 )
+
+
+st.markdown(
+    '<div class="ayanfe-composer">',
+    unsafe_allow_html=True
+)
+
+composer = st.columns([0.7, 5.8, 0.8, 0.8])
+
+with composer[0]:
+
+    plus_clicked = st.button(
+        "＋",
+        key="ayanfe_plus",
+        help="Attach a file or image"
+    )
+
+with composer[1]:
+
+    typed_message = st.text_input(
+        "message",
+        placeholder="Ask AYANFE anything...",
+        label_visibility="collapsed",
+        key="ayanfe_message"
+    )
+
+with composer[2]:
+
+    voice_audio = st.audio_input(
+        "🎙️",
+        key="ayanfe_voice",
+        label_visibility="collapsed"
+    )
+
+with composer[3]:
+
+    send_clicked = st.button(
+        "➤",
+        key="ayanfe_send",
+        help="Send message"
+    )
+
+
+st.markdown(
+    '</div>',
+    unsafe_allow_html=True
+)
+
+
+# ============================================
+# PLUS BUTTON
+# ============================================
+
+if plus_clicked:
+
+    st.session_state.show_attachments = (
+        not st.session_state.show_attachments
+    )
+
+
+if st.session_state.show_attachments:
+
+    uploaded_file = st.file_uploader(
+        "Choose a file or image",
+        type=[
+            "pdf",
+            "docx",
+            "txt",
+            "png",
+            "jpg",
+            "jpeg"
+        ],
+        key="ayanfe_attachment"
+    )
+
+    if uploaded_file:
+
+        st.success(
+            f"📎 Attached: {uploaded_file.name}"
+        )
+
+
+# ============================================
+# VOICE STATUS
+# ============================================
+
+if voice_audio:
+
+    st.info(
+        "🎙️ Voice recording received. "
+        "Voice-to-text processing will be connected next."
+    )
 
 
 # ============================================
 # PROCESS MESSAGE
 # ============================================
 
-if user_input:
+if send_clicked and typed_message.strip():
+
+    user_input = typed_message.strip()
 
     st.session_state.started = True
 
@@ -325,46 +514,64 @@ if user_input:
         user_input
     )
 
-    # Reload conversation
-    current_chat = load_chat(
-        st.session_state.chat_id
+    # ----------------------------------------
+    # FIRST: TRY AYANFE'S OWN SYSTEM
+    # ----------------------------------------
+
+    answer = fast_ayanfe_response(
+        user_input
     )
 
-    history_for_ai = [
-        {
-            "role": m["role"],
-            "content": m["content"]
-        }
-        for m in current_chat["messages"][-20:]
-    ]
+    # ----------------------------------------
+    # ONLY USE AI MODEL WHEN NECESSARY
+    # ----------------------------------------
 
-    try:
+    if answer is None:
 
-        answer = ask_ayanfe(
-            user_input,
-            conversation_history=history_for_ai
+        current_chat = load_chat(
+            st.session_state.chat_id
         )
 
-    except Exception as e:
+        history_for_ai = [
+            {
+                "role": m["role"],
+                "content": m["content"]
+            }
+            for m in current_chat["messages"][-20:]
+        ]
 
-        error_text = str(e)
+        try:
 
-        if "429" in error_text or "RESOURCE_EXHAUSTED" in error_text:
-
-            answer = (
-                "I’m connected to AYANFE AI, but the Gemini free-tier "
-                "quota is currently exhausted. The website and memory "
-                "systems are working; AI generation will resume when "
-                "the available quota resets or a usable API quota is "
-                "provided."
+            answer = ask_ayanfe(
+                user_input,
+                conversation_history=history_for_ai
             )
 
-        else:
+        except Exception as e:
 
-            answer = (
-                "AYANFE encountered a temporary AI connection problem.\n\n"
-                f"Details: {error_text}"
-            )
+            error_text = str(e)
+
+            if (
+                "429" in error_text
+                or "RESOURCE_EXHAUSTED" in error_text
+            ):
+
+                answer = (
+                    "AYANFE is temporarily unable to "
+                    "generate a full AI response. "
+                    "Please try again later."
+                )
+
+            else:
+
+                answer = (
+                    "AYANFE is temporarily unavailable. "
+                    "Please try again shortly."
+                )
+
+    # ----------------------------------------
+    # SAVE RESPONSE
+    # ----------------------------------------
 
     add_message(
         st.session_state.chat_id,
