@@ -278,50 +278,14 @@ for message in current_chat["messages"]:
 
 
 # ============================================
-# FILE UPLOAD
-# ============================================
-
-uploaded_file = st.file_uploader(
-    "＋ Attach a file",
-    type=[
-        "pdf",
-        "docx",
-        "txt",
-        "png",
-        "jpg",
-        "jpeg",
-        "webp"
-    ],
-    label_visibility="collapsed"
-)
-
-
-# ============================================
-# MAIN COMPOSER
-# ============================================
-
-placeholder = "Ask AYANFE anything..."
-
-if "prefill" in st.session_state:
-    if st.session_state.prefill:
-        placeholder = st.session_state.prefill
-
-# ============================================
 # AYANFE SMART LOCAL RESPONSE SYSTEM
 # ============================================
 
 def fast_ayanfe_response(text):
-    """
-    Handle simple requests without using Gemini.
-    Return None when a full AI response is needed.
-    """
 
     clean = text.strip().lower()
 
-    # ----------------------------------------
-    # CREATOR / IDENTITY
-    # ----------------------------------------
-
+    # CREATOR
     if clean in [
         "who created you?",
         "who made you?",
@@ -335,10 +299,7 @@ def fast_ayanfe_response(text):
             "AI assistant and learning companion."
         )
 
-    # ----------------------------------------
     # GREETINGS
-    # ----------------------------------------
-
     if clean in [
         "hi",
         "hello",
@@ -352,76 +313,7 @@ def fast_ayanfe_response(text):
             "What would you like to do today?"
         )
 
-    # ----------------------------------------
     # CAPABILITIES
-    # ----------------------------------------
-
-    if clean in [
-        "what can you do?",
-        "what can you do",
-        "what are your features?",
-        "help"
-    ]:
-        return (
-            "I can help with education, writing, programming, "
-            "research, current information, sports, files, "
-            "YouTube, everyday questions and more."
-        )
-
-    return None
-
-
-       
-# ============================================
-# AYANFE SMART LOCAL RESPONSE SYSTEM
-# ============================================
-
-def fast_ayanfe_response(text):
-    """
-    Handle simple requests without using Gemini.
-    Return None when a full AI response is needed.
-    """
-
-    clean = text.strip().lower()
-
-    # ----------------------------------------
-    # CREATOR / IDENTITY
-    # ----------------------------------------
-
-    if clean in [
-        "who created you?",
-        "who made you?",
-        "who built you?",
-        "who is your creator?",
-        "who created ayanfe?"
-    ]:
-        return (
-            "I was created by Ayanfe. "
-            "I am AYANFE AI, a modern general-purpose "
-            "AI assistant and learning companion."
-        )
-
-    # ----------------------------------------
-    # GREETINGS
-    # ----------------------------------------
-
-    if clean in [
-        "hi",
-        "hello",
-        "hey",
-        "hey ayanfe",
-        "hi ayanfe",
-        "hello ayanfe"
-    ]:
-        return (
-            "Hello! 👋 I'm AYANFE AI. "
-            "What would you like to do today?"
-        )
-
-    # ----------------------------------------
-    # CAPABILITIES
-    # ----------------------------------------
-
     if clean in [
         "what can you do?",
         "what can you do",
@@ -446,88 +338,90 @@ if "show_attachments" not in st.session_state:
 
 
 # ============================================
-# FIXED AYANFE COMPOSER
+# FIXED COMPOSER DESIGN
 # ============================================
 
-st.markdown(
-    """
-    <style>
-    .ayanfe-composer {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        padding: 10px 5%;
-        background: rgba(255,255,255,0.97);
-        border-top: 1px solid rgba(0,0,0,0.08);
-        z-index: 999;
-    }
+st.markdown("""
+<style>
 
-    .main .block-container {
-        padding-bottom: 120px;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
+.main .block-container {
+    padding-bottom: 130px !important;
+}
 
+.st-key-ayanfe_composer {
+    position: fixed;
+    bottom: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(900px, 90vw);
+    z-index: 999999;
+    background: white;
+    padding: 10px 12px;
+    border-radius: 18px;
+    border: 1px solid rgba(0,0,0,0.10);
+    box-shadow: 0 5px 25px rgba(0,0,0,0.12);
+}
 
-st.markdown(
-    '<div class="ayanfe-composer">',
-    unsafe_allow_html=True
-)
-
-composer = st.columns([0.7, 5.8, 0.8, 0.8])
-
-with composer[0]:
-
-    plus_clicked = st.button(
-        "＋",
-        key="ayanfe_plus",
-        help="Attach a file or image"
-    )
-
-with composer[1]:
-
-    typed_message = st.text_input(
-        "message",
-        placeholder="Ask AYANFE anything...",
-        label_visibility="collapsed",
-        key="ayanfe_message"
-    )
-
-with composer[2]:
-
-    voice_audio = st.audio_input(
-        "🎙️",
-        key="ayanfe_voice",
-        label_visibility="collapsed"
-    )
-
-with composer[3]:
-
-    send_clicked = st.button(
-        "➤",
-        key="ayanfe_send",
-        help="Send message"
-    )
-
-
-st.markdown(
-    '</div>',
-    unsafe_allow_html=True
-)
+</style>
+""", unsafe_allow_html=True)
 
 
 # ============================================
-# PLUS BUTTON
+# MAIN AYANFE COMPOSER
+# ============================================
+
+with st.container(key="ayanfe_composer"):
+
+    with st.form(
+        "ayanfe_message_form",
+        clear_on_submit=True
+    ):
+
+        col1, col2, col3, col4 = st.columns(
+            [0.7, 5.8, 0.9, 0.8]
+        )
+
+        # PLUS
+        with col1:
+
+            plus_clicked = st.form_submit_button(
+                "＋",
+                use_container_width=True
+            )
+
+        # TEXT INPUT
+        with col2:
+
+            typed_message = st.text_input(
+                "message",
+                placeholder="Ask AYANFE anything...",
+                label_visibility="collapsed"
+            )
+
+        # VOICE
+        with col3:
+
+            voice_audio = st.audio_input(
+                "🎙️",
+                label_visibility="collapsed"
+            )
+
+        # SEND
+        with col4:
+
+            send_clicked = st.form_submit_button(
+                "➤",
+                use_container_width=True
+            )
+
+
+# ============================================
+# PLUS / ATTACHMENTS
 # ============================================
 
 if plus_clicked:
 
-    st.session_state.show_attachments = (
-        not st.session_state.show_attachments
-    )
+    st.session_state.show_attachments = True
 
 
 if st.session_state.show_attachments:
@@ -540,7 +434,8 @@ if st.session_state.show_attachments:
             "txt",
             "png",
             "jpg",
-            "jpeg"
+            "jpeg",
+            "webp"
         ],
         key="ayanfe_attachment"
     )
@@ -553,14 +448,14 @@ if st.session_state.show_attachments:
 
 
 # ============================================
-# VOICE STATUS
+# VOICE
 # ============================================
 
 if voice_audio:
 
     st.info(
-        "🎙️ Voice recording received. "
-        "Voice-to-text processing will be connected next."
+        "🎙️ Recording received. "
+        "Voice-to-text connection is the next step."
     )
 
 
@@ -581,7 +476,7 @@ if send_clicked and typed_message.strip():
     )
 
     # ----------------------------------------
-    # FIRST: TRY AYANFE'S OWN SYSTEM
+    # LOCAL AYANFE BRAIN FIRST
     # ----------------------------------------
 
     answer = fast_ayanfe_response(
@@ -589,7 +484,7 @@ if send_clicked and typed_message.strip():
     )
 
     # ----------------------------------------
-    # ONLY USE AI MODEL WHEN NECESSARY
+    # AI FALLBACK ONLY WHEN NECESSARY
     # ----------------------------------------
 
     if answer is None:
@@ -636,7 +531,7 @@ if send_clicked and typed_message.strip():
                 )
 
     # ----------------------------------------
-    # SAVE RESPONSE
+    # SAVE ANSWER
     # ----------------------------------------
 
     add_message(
