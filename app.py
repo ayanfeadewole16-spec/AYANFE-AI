@@ -371,6 +371,77 @@ def fast_ayanfe_response(text):
     return None
 
 
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 10px 5%;
+        background: rgba(255,255,
+# ============================================
+# AYANFE SMART LOCAL RESPONSE SYSTEM
+# ============================================
+
+def fast_ayanfe_response(text):
+    """
+    Handle simple requests without using Gemini.
+    Return None when a full AI response is needed.
+    """
+
+    clean = text.strip().lower()
+
+    # ----------------------------------------
+    # CREATOR / IDENTITY
+    # ----------------------------------------
+
+    if clean in [
+        "who created you?",
+        "who made you?",
+        "who built you?",
+        "who is your creator?",
+        "who created ayanfe?"
+    ]:
+        return (
+            "I was created by Ayanfe. "
+            "I am AYANFE AI, a modern general-purpose "
+            "AI assistant and learning companion."
+        )
+
+    # ----------------------------------------
+    # GREETINGS
+    # ----------------------------------------
+
+    if clean in [
+        "hi",
+        "hello",
+        "hey",
+        "hey ayanfe",
+        "hi ayanfe",
+        "hello ayanfe"
+    ]:
+        return (
+            "Hello! 👋 I'm AYANFE AI. "
+            "What would you like to do today?"
+        )
+
+    # ----------------------------------------
+    # CAPABILITIES
+    # ----------------------------------------
+
+    if clean in [
+        "what can you do?",
+        "what can you do",
+        "what are your features?",
+        "help"
+    ]:
+        return (
+            "I can help with education, writing, programming, "
+            "research, current information, sports, files, "
+            "YouTube, everyday questions and more."
+        )
+
+    return None
+
+
 # ============================================
 # COMPOSER STATE
 # ============================================
