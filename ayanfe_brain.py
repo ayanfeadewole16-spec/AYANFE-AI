@@ -6,7 +6,6 @@ import os
 from datetime import datetime
 
 from google import genai
-
 from master_router import route_request
 
 
@@ -28,22 +27,21 @@ If asked who created you, answer:
 
 You are NOT an education-only assistant.
 
-You can help with:
-education, general questions, current information,
-football and sports, programming, writing, research,
-social-life questions, files, images, YouTube, voice,
+You can help with education, general questions,
+current information, football and sports,
+programming, writing, research, social-life
+questions, files, images, YouTube, voice,
 and everyday questions.
 
 For educational questions, when appropriate use:
-
 1. Simple explanation
 2. Detailed explanation
 3. Example
 4. Practice question
 5. Quiz
 
-Do not claim information is current unless it has
-actually been obtained from a current source.
+Do not claim information is current unless it
+has actually been obtained from a current source.
 
 Be helpful, accurate and clear.
 """
@@ -86,38 +84,38 @@ def local_response(user_message):
         "who built you",
         "who is your creator?"
     ]:
-
         return "I was created by Ayanfe."
 
 
-   # ----------------------------------------
-# GREETINGS / CASUAL CONVERSATION
-# ----------------------------------------
+    # ----------------------------------------
+    # GREETINGS / CASUAL CONVERSATION
+    # ----------------------------------------
 
-if clean in [
-    "hi",
-    "hello",
-    "hey",
-    "hi ayanfe",
-    "hello ayanfe",
-    "hey ayanfe",
-    "good morning",
-    "good afternoon",
-    "good evening",
-    "how are you",
-    "how are you?",
-    "how are you today",
-    "how are you today?",
-    "how is it going",
-    "how's it going",
-    "how are things"
-]:
+    if clean in [
+        "hi",
+        "hello",
+        "hey",
+        "hi ayanfe",
+        "hello ayanfe",
+        "hey ayanfe",
+        "good morning",
+        "good afternoon",
+        "good evening",
+        "how are you",
+        "how are you?",
+        "how are you today",
+        "how are you today?",
+        "how is it going",
+        "how's it going",
+        "how are things"
+    ]:
+        return (
+            "I'm doing great! 😊 "
+            "I'm ready to help. What would you like "
+            "to do today?"
+        )
 
-    return (
-        "I'm doing great! 😊 "
-        "I'm ready to help. What would you like "
-        "to do today?"
-    )
+
     # ----------------------------------------
     # CAPABILITIES
     # ----------------------------------------
@@ -128,7 +126,6 @@ if clean in [
         "what are your features?",
         "help"
     ]:
-
         return (
             "I can help with education, writing, "
             "programming, research, current information, "
@@ -147,8 +144,9 @@ if clean in [
         "what date is it?",
         "what date is it"
     ]:
-
-        today = datetime.now().strftime("%A, %B %d, %Y")
+        today = datetime.now().strftime(
+            "%A, %B %d, %Y"
+        )
 
         return f"Today is {today}."
 
@@ -163,8 +161,9 @@ if clean in [
         "what is the current time?",
         "what is the current time"
     ]:
-
-        current_time = datetime.now().strftime("%I:%M %p")
+        current_time = datetime.now().strftime(
+            "%I:%M %p"
+        )
 
         return f"The current time is {current_time}."
 
@@ -182,38 +181,38 @@ def gemini_fallback(
     api_key=None
 ):
 
-    client = get_client(api_key)
-
-    prompt = AYANFE_SYSTEM_INSTRUCTION + "\n\n"
-
-    if conversation_history:
-
-        prompt += "Previous conversation:\n"
-
-        for message in conversation_history:
-
-            role = message.get(
-                "role",
-                "user"
-            )
-
-            content = message.get(
-                "content",
-                ""
-            )
-
-            prompt += (
-                f"{role}: {content}\n"
-            )
-
-        prompt += "\n"
-
-    prompt += (
-        f"User: {user_message}\n\n"
-        "AYANFE:"
-    )
-
     try:
+
+        client = get_client(api_key)
+
+        prompt = AYANFE_SYSTEM_INSTRUCTION + "\n\n"
+
+        if conversation_history:
+
+            prompt += "Previous conversation:\n"
+
+            for message in conversation_history:
+
+                role = message.get(
+                    "role",
+                    "user"
+                )
+
+                content = message.get(
+                    "content",
+                    ""
+                )
+
+                prompt += (
+                    f"{role}: {content}\n"
+                )
+
+            prompt += "\n"
+
+        prompt += (
+            f"User: {user_message}\n\n"
+            "AYANFE:"
+        )
 
         response = client.models.generate_content(
             model=MODEL,
@@ -226,19 +225,25 @@ def gemini_fallback(
 
         error_text = str(e)
 
-        # NEVER expose Gemini technical errors
+        # ------------------------------------
+        # GEMINI QUOTA
+        # ------------------------------------
+
         if (
             "429" in error_text
             or "RESOURCE_EXHAUSTED" in error_text
             or "quota" in error_text.lower()
         ):
-
             return (
                 "AYANFE is busy right now. 🧠\n\n"
                 "This version of AYANFE is temporarily "
                 "busy with its AI service. Try asking me "
                 "something else, or try again later."
             )
+
+        # ------------------------------------
+        # OTHER AI ERROR
+        # ------------------------------------
 
         return (
             "AYANFE is temporarily unavailable. "
@@ -257,7 +262,7 @@ def ask_ayanfe(
 ):
 
     # ----------------------------------------
-    # 1. TRY LOCAL AYANFE FIRST
+    # 1. LOCAL AYANFE FIRST
     # ----------------------------------------
 
     local_answer = local_response(
@@ -269,16 +274,11 @@ def ask_ayanfe(
 
 
     # ----------------------------------------
-    # 2. ASK MASTER ROUTER
+    # 2. MASTER ROUTER
     # ----------------------------------------
 
     route = route_request(
         user_message
-    )
-
-    intent = route.get(
-        "intent",
-        "general"
     )
 
     use_gemini = route.get(
@@ -288,25 +288,7 @@ def ask_ayanfe(
 
 
     # ----------------------------------------
-    # 3. CURRENT SPECIALIST SYSTEMS
-    # ----------------------------------------
-    #
-    # These will be connected next:
-    #
-    # live_search
-    # education
-    # youtube
-    # memory
-    # files
-    # voice
-    #
-    # For now, unsupported specialist
-    # requests safely fall through.
-    # ----------------------------------------
-
-
-    # ----------------------------------------
-    # 4. GEMINI LAST-RESORT FALLBACK
+    # 3. GEMINI FALLBACK
     # ----------------------------------------
 
     if use_gemini:
@@ -319,7 +301,7 @@ def ask_ayanfe(
 
 
     # ----------------------------------------
-    # 5. SAFE FALLBACK
+    # 4. SAFE FALLBACK
     # ----------------------------------------
 
     return (
