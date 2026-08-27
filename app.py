@@ -9,13 +9,13 @@ from pathlib import Path
 import streamlit as st
 
 from ayanfe_brain import ask_ayanfe
-from memory import (
-    create_chat,
-    load_chat,
-    list_chats,
-    add_message,
-    delete_chat
-)
+import memory
+
+create_chat = memory.create_chat
+load_chat = memory.load_chat
+list_chats = memory.list_chats
+add_message = memory.add_message
+delete_chat = memory.delete_chat
 
 
 # ============================================
