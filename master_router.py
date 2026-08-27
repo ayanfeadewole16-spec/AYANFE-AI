@@ -2,18 +2,19 @@
 # AYANFE AI V2 — MASTER ROUTER
 # ============================================
 
-from datetime import datetime
+from live_detector import detect_live_requirement
+from youtube import is_youtube_request
+from education import is_education_request
 
-
-# ============================================
-# INTENT DETECTION
-# ============================================
 
 def detect_intent(user_input):
 
     text = user_input.strip().lower()
 
-    # Identity
+    # ----------------------------------------
+    # IDENTITY
+    # ----------------------------------------
+
     if any(x in text for x in [
         "who created you",
         "who made you",
@@ -22,77 +23,80 @@ def detect_intent(user_input):
     ]):
         return "identity"
 
-    # Greetings
+
+    # ----------------------------------------
+    # GREETINGS / CASUAL
+    # ----------------------------------------
+
     if text in [
         "hi",
         "hello",
         "hey",
+        "hi ayanfe",
+        "hello ayanfe",
+        "hey ayanfe",
         "good morning",
         "good afternoon",
-        "good evening"
+        "good evening",
+        "how are you",
+        "how are you?",
+        "how are you today",
+        "how are you today?",
+        "how is it going",
+        "how's it going",
+        "how are things"
     ]:
         return "greeting"
 
-    # Date / time
+
+    # ----------------------------------------
+    # DATE / TIME
+    # ----------------------------------------
+
     if any(x in text for x in [
         "what time is it",
         "current time",
         "what is today's date",
         "what date is it",
-        "today's date"
+        "today's date",
+        "what day is it",
+        "what day is today",
+        "time in",
+        "date in"
     ]):
         return "datetime"
 
-    # YouTube
-    if any(x in text for x in [
-        "youtube",
-        "youtube video",
-        "find me a video",
-        "find a video"
-    ]):
+
+    # ----------------------------------------
+    # YOUTUBE
+    # ----------------------------------------
+
+    if is_youtube_request(text):
         return "youtube"
 
-    # Live information
-    if any(x in text for x in [
-        "latest",
-        "recent",
-        "today",
-        "yesterday",
-        "currently",
-        "right now",
-        "news",
-        "current",
-        "who won",
-        "latest score",
-        "football results",
-        "football table"
-    ]):
+
+    # ----------------------------------------
+    # LIVE INFORMATION
+    # ----------------------------------------
+
+    live = detect_live_requirement(text)
+
+    if live.get("needs_live_search"):
         return "live"
 
-    # Education
-    if any(x in text for x in [
-        "explain",
-        "solve",
-        "teach me",
-        "study",
-        "quiz me",
-        "practice question",
-        "waec",
-        "jamb",
-        "neco",
-        "mathematics",
-        "math",
-        "physics",
-        "chemistry",
-        "biology",
-        "economics",
-        "government",
-        "literature",
-        "computer science"
-    ]):
+
+    # ----------------------------------------
+    # EDUCATION
+    # ----------------------------------------
+
+    if is_education_request(text):
         return "education"
 
-    # Programming
+
+    # ----------------------------------------
+    # PROGRAMMING
+    # ----------------------------------------
+
     if any(x in text for x in [
         "python",
         "javascript",
@@ -100,11 +104,17 @@ def detect_intent(user_input):
         "code",
         "coding",
         "debug",
-        "program"
+        "program",
+        "html",
+        "css"
     ]):
         return "programming"
 
-    # Writing
+
+    # ----------------------------------------
+    # WRITING
+    # ----------------------------------------
+
     if any(x in text for x in [
         "write",
         "rewrite",
@@ -112,31 +122,35 @@ def detect_intent(user_input):
         "letter",
         "caption",
         "story",
-        "email"
+        "email",
+        "paragraph",
+        "application"
     ]):
         return "writing"
 
+
+    # ----------------------------------------
+    # GENERAL
+    # ----------------------------------------
+
     return "general"
 
-
-# ============================================
-# ROUTE REQUEST
-# ============================================
 
 def route_request(user_input):
 
     intent = detect_intent(user_input)
 
+    # Gemini is NOT automatically required
+    # for specialist/local requests.
+
     return {
         "intent": intent,
 
-        # Gemini remains the fallback for now.
-        # Specialist systems will be connected
-        # to these intents next.
-        "use_gemini": intent in [
-            "general",
-            "education",
-            "programming",
-            "writing"
-        ]
+        "use_gemini": intent == "general",
+
+        "needs_live_search": intent == "live",
+
+        "needs_youtube": intent == "youtube",
+
+        "needs_education": intent == "education"
     }
