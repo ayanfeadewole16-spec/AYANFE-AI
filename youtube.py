@@ -1,16 +1,11 @@
-
 # ============================================
 # AYANFE AI V2 — YOUTUBE SEARCH
 # ============================================
 
-import re
 from ddgs import DDGS
 
 
 def is_youtube_request(text):
-    """
-    Detect whether the user specifically wants YouTube.
-    """
 
     text = text.lower()
 
@@ -22,21 +17,24 @@ def is_youtube_request(text):
         "find a video"
     ]
 
-    return any(keyword in text for keyword in keywords)
+    return any(
+        keyword in text
+        for keyword in keywords
+    )
 
 
 def search_youtube(query, max_results=5):
-    """
-    Search the web specifically for YouTube videos.
-    Returns actual YouTube watch URLs where available.
-    """
 
     results = []
 
-    search_query = f"site:youtube.com/watch {query}"
+    search_query = (
+        f"site:youtube.com/watch {query}"
+    )
 
     try:
+
         with DDGS() as ddgs:
+
             search_results = ddgs.text(
                 search_query,
                 max_results=max_results
@@ -44,18 +42,27 @@ def search_youtube(query, max_results=5):
 
             for item in search_results:
 
-                url = item.get("href", "")
+                url = item.get(
+                    "href",
+                    ""
+                )
 
-                # Only accept actual YouTube watch URLs
                 if "youtube.com/watch" in url:
 
                     results.append({
-                        "title": item.get("title", ""),
+                        "title": item.get(
+                            "title",
+                            ""
+                        ),
                         "url": url,
-                        "description": item.get("body", "")
+                        "description": item.get(
+                            "body",
+                            ""
+                        )
                     })
 
     except Exception as e:
+
         return {
             "success": False,
             "error": str(e),
@@ -70,19 +77,21 @@ def search_youtube(query, max_results=5):
 
 
 def get_best_youtube_video(query):
-    """
-    Return the first actual YouTube video found.
-    """
 
-    result = search_youtube(query, max_results=5)
+    result = search_youtube(
+        query,
+        max_results=5
+    )
 
     if not result["success"]:
+
         return result
 
     if not result["results"]:
+
         return {
             "success": False,
-            "error": "No exact YouTube video was found.",
+            "error": "No YouTube video was found.",
             "results": []
         }
 
