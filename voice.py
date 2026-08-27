@@ -1,43 +1,51 @@
-
 # ============================================
 # AYANFE AI V2 — VOICE SYSTEM
 # ============================================
 
+from pathlib import Path
+
+
+SUPPORTED_AUDIO = {
+    ".wav",
+    ".mp3",
+    ".m4a",
+    ".ogg",
+    ".webm"
+}
+
+
 def is_voice_supported_audio(filename):
-    """
-    Check whether the uploaded audio format is supported.
-    """
 
-    supported = {
-        ".wav",
-        ".mp3",
-        ".m4a",
-        ".ogg",
-        ".webm"
-    }
-
-    from pathlib import Path
-
-    return Path(filename).suffix.lower() in supported
+    return Path(
+        filename
+    ).suffix.lower() in SUPPORTED_AUDIO
 
 
 def transcribe_audio(file_path):
+
     """
-    Convert speech audio into text.
+    Convert recorded speech into text.
 
-    This function is kept separate from the UI so the
-    Streamlit microphone can later connect to it.
+    Uses SpeechRecognition when available.
     """
-
-    import speech_recognition as sr
-
-    recognizer = sr.Recognizer()
 
     try:
-        with sr.AudioFile(str(file_path)) as source:
-            audio = recognizer.record(source)
 
-        text = recognizer.recognize_google(audio)
+        import speech_recognition as sr
+
+        recognizer = sr.Recognizer()
+
+        with sr.AudioFile(
+            str(file_path)
+        ) as source:
+
+            audio = recognizer.record(
+                source
+            )
+
+        text = recognizer.recognize_google(
+            audio
+        )
 
         return {
             "success": True,
@@ -45,18 +53,21 @@ def transcribe_audio(file_path):
         }
 
     except sr.UnknownValueError:
+
         return {
             "success": False,
-            "error": "Speech could not be understood."
+            "error": "I couldn't understand the recording."
         }
 
-    except sr.RequestError as e:
+    except sr.RequestError:
+
         return {
             "success": False,
-            "error": f"Speech recognition service error: {e}"
+            "error": "Voice recognition is temporarily unavailable."
         }
 
     except Exception as e:
+
         return {
             "success": False,
             "error": str(e)
@@ -64,18 +75,17 @@ def transcribe_audio(file_path):
 
 
 def voice_context():
-    """
-    Instructions for the future AYANFE voice interface.
-    """
 
     return """
-Voice input is integrated into the main AYANFE composer.
+Voice input is part of AYANFE's main composer.
 
-The interface should contain only one send button.
+The intended flow is:
 
-Desired composer:
+Microphone
+→ speech recording
+→ transcription
+→ text
+→ AYANFE
 
-[ + ] [ Ask AYANFE anything... ] [ microphone ] [ send ]
-
-Do not create a large separate voice-recording section.
+Voice should not create a separate large section.
 """
