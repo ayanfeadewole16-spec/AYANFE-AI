@@ -1,30 +1,25 @@
+# ============================================
+# AYANFE AI V2 — MAIN STREAMLIT APPLICATION
+# ============================================
+
+import os
+import tempfile
+from pathlib import Path
 
 import streamlit as st
-import sys
-from pathlib import Path
-from datetime import datetime
 
-# ============================================
-# AYANFE AI V2 — STREAMLIT WEBSITE
-# ============================================
-
-PROJECT = Path(__file__).parent
-
-if str(PROJECT) not in sys.path:
-    sys.path.insert(0, str(PROJECT))
-
+from ayanfe_brain import ask_ayanfe
 from memory import (
     create_chat,
     load_chat,
+    list_chats,
     add_message,
-    list_chats
+    delete_chat
 )
-
-from ayanfe_brain import ask_ayanfe
 
 
 # ============================================
-# PAGE CONFIG
+# PAGE CONFIGURATION
 # ============================================
 
 st.set_page_config(
@@ -36,93 +31,168 @@ st.set_page_config(
 
 
 # ============================================
-# CUSTOM DESIGN
-# ============================================
-
-st.markdown("""
-<style>
-
-#MainMenu {
-    visibility: hidden;
-}
-
-footer {
-    visibility: hidden;
-}
-
-header {
-    visibility: hidden;
-}
-
-.block-container {
-    max-width: 1100px;
-    padding-top: 2rem;
-    padding-bottom: 7rem;
-}
-
-/* Sidebar */
-
-section[data-testid="stSidebar"] {
-    border-right: 1px solid rgba(128,128,128,0.18);
-}
-
-.sidebar-title {
-    font-size: 24px;
-    font-weight: 700;
-    margin-bottom: 20px;
-}
-
-/* Welcome */
-
-.welcome {
-    text-align: center;
-    padding-top: 12vh;
-}
-
-.welcome h1 {
-    font-size: 42px;
-    margin-bottom: 8px;
-}
-
-.welcome p {
-    font-size: 18px;
-    opacity: 0.7;
-}
-
-/* Cards */
-
-div.stButton > button {
-    border-radius: 12px;
-    min-height: 48px;
-}
-
-/* Messages */
-
-[data-testid="stChatMessage"] {
-    border-radius: 14px;
-}
-
-/* Bottom composer */
-
-[data-testid="stChatInput"] {
-    position: fixed;
-    bottom: 20px;
-}
-
-</style>
-""", unsafe_allow_html=True)
-
-
-# ============================================
 # SESSION STATE
 # ============================================
 
 if "chat_id" not in st.session_state:
-    chat = create_chat()
-    st.session_state.chat_id = chat["chat_id"]
+
+    new_chat = create_chat()
+
+    st.session_state.chat_id = (
+        new_chat["chat_id"]
+    )
+
 
 if "started" not in st.session_state:
+
     st.session_state.started = False
+
+
+if "show_attachments" not in st.session_state:
+
+    st.session_state.show_attachments = False
+
+
+if "uploaded_file" not in st.session_state:
+
+    st.session_state.uploaded_file = None
+
+
+# ============================================
+# CUSTOM CSS
+# ============================================
+
+st.markdown(
+    """
+    <style>
+
+    /* Main application */
+
+    .stApp {
+        overflow-x: hidden;
+    }
+
+
+    /* Hide Streamlit decoration */
+
+    #MainMenu {
+        visibility: hidden;
+    }
+
+    footer {
+        visibility: hidden;
+    }
+
+
+    /* Main content */
+
+    .main .block-container {
+
+        max-width: 1000px;
+
+        padding-top: 30px;
+
+        padding-bottom: 120px;
+    }
+
+
+    /* AYANFE title */
+
+    .ayanfe-title {
+
+        text-align: center;
+
+        font-size: 42px;
+
+        font-weight: 700;
+
+        margin-top: 20px;
+
+        margin-bottom: 5px;
+    }
+
+
+    .ayanfe-subtitle {
+
+        text-align: center;
+
+        opacity: 0.65;
+
+        margin-bottom: 35px;
+    }
+
+
+    /* Chat messages */
+
+    [data-testid="stChatMessage"] {
+
+        border-radius: 16px;
+
+        margin-bottom: 10px;
+    }
+
+
+    /* Fixed composer */
+
+    .composer-area {
+
+        position: fixed;
+
+        left: 0;
+
+        right: 0;
+
+        bottom: 0;
+
+        z-index: 999;
+
+        padding: 10px 20px 15px 20px;
+
+        background: rgba(255,255,255,0.96);
+
+        border-top: 1px solid rgba(128,128,128,0.20);
+
+        backdrop-filter: blur(12px);
+    }
+
+
+    /* Dark mode */
+
+    @media (prefers-color-scheme: dark) {
+
+        .composer-area {
+
+            background: rgba(20,20,20,0.96);
+
+        }
+    }
+
+
+    /* Attachment buttons */
+
+    .attachment-title {
+
+        font-weight: 600;
+
+        margin-bottom: 5px;
+    }
+
+
+    /* Sidebar */
+
+    .sidebar-title {
+
+        font-size: 22px;
+
+        font-weight: 700;
+
+        margin-bottom: 15px;
+    }
+
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
 
 # ============================================
@@ -136,58 +206,125 @@ with st.sidebar:
         unsafe_allow_html=True
     )
 
+
+    # ----------------------------------------
+    # NEW CHAT
+    # ----------------------------------------
+
     if st.button(
         "＋ New Chat",
         use_container_width=True
     ):
-        chat = create_chat()
 
-        st.session_state.chat_id = chat["chat_id"]
+        new_chat = create_chat()
+
+        st.session_state.chat_id = (
+            new_chat["chat_id"]
+        )
+
+        st.session_state.started = False
+
+        st.session_state.show_attachments = False
+
+        st.session_state.uploaded_file = None
+
+        st.rerun()
+
+
+    st.divider()
+
+
+    # ----------------------------------------
+    # CHAT HISTORY
+    # ----------------------------------------
+
+    st.markdown("### 💬 Chats")
+
+    chats = list_chats()
+
+
+    for chat in chats:
+
+        chat_id = chat["chat_id"]
+
+        label = (
+            "New conversation"
+            if chat["message_count"] == 0
+            else f"Conversation ({chat['message_count']} messages)"
+        )
+
+
+        if st.button(
+            label,
+            key=f"chat_{chat_id}",
+            use_container_width=True
+        ):
+
+            st.session_state.chat_id = chat_id
+
+            loaded = load_chat(chat_id)
+
+            st.session_state.started = bool(
+                loaded
+                and loaded.get("messages")
+            )
+
+            st.rerun()
+
+
+    st.divider()
+
+
+    # ----------------------------------------
+    # DELETE CURRENT CHAT
+    # ----------------------------------------
+
+    if st.button(
+        "🗑️ Delete current chat",
+        use_container_width=True
+    ):
+
+        delete_chat(
+            st.session_state.chat_id
+        )
+
+        new_chat = create_chat()
+
+        st.session_state.chat_id = (
+            new_chat["chat_id"]
+        )
+
         st.session_state.started = False
 
         st.rerun()
 
-    st.divider()
-
-    st.markdown("### 🗂 History")
-
-    history = list_chats()
-
-    if history:
-
-        for item in history:
-
-            chat_id = item["chat_id"]
-
-            if item["message_count"] == 0:
-                title = "New conversation"
-            else:
-                chat = load_chat(chat_id)
-
-                first_user_message = next(
-                    (
-                        m["content"]
-                        for m in chat["messages"]
-                        if m["role"] == "user"
-                    ),
-                    "Conversation"
-                )
-
-                title = first_user_message[:32]
-
-            if st.button(
-                title,
-                key=f"history_{chat_id}",
-                use_container_width=True
-            ):
-                st.session_state.chat_id = chat_id
-                st.session_state.started = True
-                st.rerun()
 
     st.divider()
 
-    st.caption("AYANFE AI")
-    st.caption("Created by Ayanfe")
+
+    st.caption(
+        "AYANFE AI V2\n"
+        "Created by Ayanfe"
+    )
+
+
+# ============================================
+# HEADER
+# ============================================
+
+if not st.session_state.started:
+
+    st.markdown(
+        '<div class="ayanfe-title">AYANFE AI</div>',
+        unsafe_allow_html=True
+    )
+
+    st.markdown(
+        '<div class="ayanfe-subtitle">'
+        'Your AI assistant and learning companion'
+        '</div>',
+        unsafe_allow_html=True
+    )
 
 
 # ============================================
@@ -198,337 +335,311 @@ current_chat = load_chat(
     st.session_state.chat_id
 )
 
+
 if current_chat is None:
+
     current_chat = create_chat()
-    st.session_state.chat_id = current_chat["chat_id"]
 
-
-# ============================================
-# WELCOME SCREEN
-# ============================================
-
-if not current_chat["messages"]:
-
-    st.markdown(
-        """
-        <div class="welcome">
-            <h1>🧠 AYANFE AI</h1>
-            <p>What do you want to do today?</p>
-        </div>
-        """,
-        unsafe_allow_html=True
+    st.session_state.chat_id = (
+        current_chat["chat_id"]
     )
 
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        if st.button("📚 Study", use_container_width=True):
-            st.session_state.started = True
-            st.session_state.prefill = "Help me study "
-            st.rerun()
-
-    with col2:
-        if st.button("✍️ Write", use_container_width=True):
-            st.session_state.started = True
-            st.session_state.prefill = "Help me write "
-            st.rerun()
-
-    with col3:
-        if st.button("🔬 Research", use_container_width=True):
-            st.session_state.started = True
-            st.session_state.prefill = "Help me research "
-            st.rerun()
-
-    col4, col5, col6 = st.columns(3)
-
-    with col4:
-        if st.button("💻 Code", use_container_width=True):
-            st.session_state.started = True
-            st.session_state.prefill = "Help me with programming "
-            st.rerun()
-
-    with col5:
-        if st.button("⚽ Sports", use_container_width=True):
-            st.session_state.started = True
-            st.session_state.prefill = "Give me the latest sports information "
-            st.rerun()
-
-    with col6:
-        if st.button("💡 Ask Anything", use_container_width=True):
-            st.session_state.started = True
-            st.session_state.prefill = ""
-            st.rerun()
-
 
 # ============================================
-# DISPLAY CONVERSATION
+# DISPLAY CHAT
 # ============================================
 
 for message in current_chat["messages"]:
 
     role = message["role"]
 
+    content = message["content"]
+
+
     if role == "user":
+
         with st.chat_message("user"):
-            st.markdown(message["content"])
 
-    elif role == "assistant":
-        with st.chat_message("assistant", avatar="🧠"):
-            st.markdown(message["content"])
+            st.markdown(content)
 
 
-# ============================================
-# AYANFE SMART LOCAL RESPONSE SYSTEM
-# ============================================
+    else:
 
-def fast_ayanfe_response(text):
+        with st.chat_message("assistant"):
 
-    clean = text.strip().lower()
-
-    # CREATOR
-    if clean in [
-        "who created you?",
-        "who made you?",
-        "who built you?",
-        "who is your creator?",
-        "who created ayanfe?"
-    ]:
-        return (
-            "I was created by Ayanfe. "
-            "I am AYANFE AI, a modern general-purpose "
-            "AI assistant and learning companion."
-        )
-
-    # GREETINGS
-    if clean in [
-        "hi",
-        "hello",
-        "hey",
-        "hey ayanfe",
-        "hi ayanfe",
-        "hello ayanfe"
-    ]:
-        return (
-            "Hello! 👋 I'm AYANFE AI. "
-            "What would you like to do today?"
-        )
-
-    # CAPABILITIES
-    if clean in [
-        "what can you do?",
-        "what can you do",
-        "what are your features?",
-        "help"
-    ]:
-        return (
-            "I can help with education, writing, programming, "
-            "research, current information, sports, files, "
-            "YouTube, everyday questions and more."
-        )
-
-    return None
+            st.markdown(content)
 
 
 # ============================================
-# COMPOSER STATE
+# ATTACHMENT MENU
 # ============================================
-
-if "show_attachments" not in st.session_state:
-    st.session_state.show_attachments = False
-
-
-# ============================================
-# FIXED COMPOSER DESIGN
-# ============================================
-
-st.markdown("""
-<style>
-
-.main .block-container {
-    padding-bottom: 130px !important;
-}
-
-.st-key-ayanfe_composer {
-    position: fixed;
-    bottom: 15px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: min(900px, 90vw);
-    z-index: 999999;
-    background: white;
-    padding: 10px 12px;
-    border-radius: 18px;
-    border: 1px solid rgba(0,0,0,0.10);
-    box-shadow: 0 5px 25px rgba(0,0,0,0.12);
-}
-
-</style>
-""", unsafe_allow_html=True)
-
-
-# ============================================
-# MAIN AYANFE COMPOSER
-# ============================================
-
-with st.container(key="ayanfe_composer"):
-
-    with st.form(
-        "ayanfe_message_form",
-        clear_on_submit=True
-    ):
-
-        col1, col2, col3, col4 = st.columns(
-            [0.7, 5.8, 0.9, 0.8]
-        )
-
-        # PLUS
-        with col1:
-
-            plus_clicked = st.form_submit_button(
-                "＋",
-                use_container_width=True
-            )
-
-        # TEXT INPUT
-        with col2:
-
-            typed_message = st.text_input(
-                "message",
-                placeholder="Ask AYANFE anything...",
-                label_visibility="collapsed"
-            )
-
-        # VOICE
-        with col3:
-
-            voice_audio = st.audio_input(
-                "🎙️",
-                label_visibility="collapsed"
-            )
-
-        # SEND
-        with col4:
-
-            send_clicked = st.form_submit_button(
-                "➤",
-                use_container_width=True
-            )
-
-
-# ============================================
-# PLUS / ATTACHMENTS
-# ============================================
-
-if plus_clicked:
-
-    st.session_state.show_attachments = True
-
 
 if st.session_state.show_attachments:
 
-    uploaded_file = st.file_uploader(
-        "Choose a file or image",
-        type=[
-            "pdf",
-            "docx",
-            "txt",
-            "png",
-            "jpg",
-            "jpeg",
-            "webp"
-        ],
-        key="ayanfe_attachment"
+    st.markdown(
+        '<div class="attachment-title">'
+        'Add to your message'
+        '</div>',
+        unsafe_allow_html=True
     )
 
-    if uploaded_file:
 
-        st.success(
-            f"📎 Attached: {uploaded_file.name}"
+    attachment_type = st.radio(
+        "Choose attachment",
+        [
+            "📄 File",
+            "🖼️ Image",
+            "🎥 Video"
+        ],
+        horizontal=True,
+        label_visibility="collapsed"
+    )
+
+
+    if attachment_type == "📄 File":
+
+        uploaded = st.file_uploader(
+            "Choose a file",
+            type=[
+                "pdf",
+                "docx",
+                "txt"
+            ],
+            label_visibility="collapsed"
         )
 
 
+    elif attachment_type == "🖼️ Image":
+
+        uploaded = st.file_uploader(
+            "Choose an image",
+            type=[
+                "png",
+                "jpg",
+                "jpeg",
+                "webp"
+            ],
+            label_visibility="collapsed"
+        )
+
+
+    else:
+
+        uploaded = st.file_uploader(
+            "Choose a video",
+            type=[
+                "mp4",
+                "mov",
+                "webm"
+            ],
+            label_visibility="collapsed"
+        )
+
+
+    if uploaded is not None:
+
+        st.session_state.uploaded_file = uploaded
+
+
 # ============================================
-# VOICE
+# VOICE INPUT
 # ============================================
 
-if voice_audio:
+voice_audio = None
 
-    st.info(
-        "🎙️ Recording received. "
-        "Voice-to-text connection is the next step."
+
+with st.container():
+
+    st.markdown(
+        '<div class="composer-area">',
+        unsafe_allow_html=True
     )
+
+
+    col1, col2, col3 = st.columns(
+        [0.7, 6.5, 0.9]
+    )
+
+
+    # ----------------------------------------
+    # PLUS BUTTON
+    # ----------------------------------------
+
+    with col1:
+
+        if st.button(
+            "＋",
+            key="plus_button",
+            help="Add file, image or video"
+        ):
+
+            st.session_state.show_attachments = (
+                not st.session_state.show_attachments
+            )
+
+            st.rerun()
+
+
+    # ----------------------------------------
+    # TEXT INPUT
+    # ----------------------------------------
+
+    with col2:
+
+        user_input = st.chat_input(
+            "Ask AYANFE anything..."
+        )
+
+
+    # ----------------------------------------
+    # MICROPHONE
+    # ----------------------------------------
+
+    with col3:
+
+        voice_audio = st.audio_input(
+            "🎙️",
+            key="voice_recorder"
+        )
+
+
+    st.markdown(
+        '</div>',
+        unsafe_allow_html=True
+    )
+
+
+# ============================================
+# VOICE PROCESSING
+# ============================================
+
+if voice_audio is not None:
+
+    try:
+
+        from voice import transcribe_audio
+
+
+        with tempfile.NamedTemporaryFile(
+            delete=False,
+            suffix=".wav"
+        ) as temp_file:
+
+            temp_file.write(
+                voice_audio.getvalue()
+            )
+
+            temp_path = temp_file.name
+
+
+        result = transcribe_audio(
+            temp_path
+        )
+
+
+        try:
+
+            os.remove(temp_path)
+
+        except Exception:
+
+            pass
+
+
+        if result.get("success"):
+
+            user_input = result["text"]
+
+        else:
+
+            st.warning(
+                result.get(
+                    "error",
+                    "Voice transcription failed."
+                )
+            )
+
+            user_input = None
+
+
+    except Exception:
+
+        st.warning(
+            "Voice input is temporarily unavailable."
+        )
+
+        user_input = None
 
 
 # ============================================
 # PROCESS MESSAGE
 # ============================================
 
-if send_clicked and typed_message.strip():
-
-    user_input = typed_message.strip()
+if user_input:
 
     st.session_state.started = True
+
+
+    # ----------------------------------------
+    # ATTACHMENT INFORMATION
+    # ----------------------------------------
+
+    attachment = (
+        st.session_state.uploaded_file
+    )
+
+
+    message_for_ai = user_input
+
+
+    if attachment is not None:
+
+        message_for_ai += (
+            "\n\n[Attached file: "
+            f"{attachment.name}]"
+        )
+
+
+    # ----------------------------------------
+    # SAVE USER MESSAGE
+    # ----------------------------------------
 
     add_message(
         st.session_state.chat_id,
         "user",
-        user_input
+        message_for_ai
     )
 
+
     # ----------------------------------------
-    # LOCAL AYANFE BRAIN FIRST
+    # RELOAD CONVERSATION
     # ----------------------------------------
 
-    answer = fast_ayanfe_response(
-        user_input
+    current_chat = load_chat(
+        st.session_state.chat_id
     )
 
+
+    history_for_ai = [
+
+        {
+            "role": m["role"],
+            "content": m["content"]
+        }
+
+        for m in current_chat["messages"][-20:]
+    ]
+
+
     # ----------------------------------------
-    # AI FALLBACK ONLY WHEN NECESSARY
+    # ASK AYANFE
     # ----------------------------------------
 
-    if answer is None:
+    answer = ask_ayanfe(
+        user_input,
+        conversation_history=history_for_ai
+    )
 
-        current_chat = load_chat(
-            st.session_state.chat_id
-        )
-
-        history_for_ai = [
-            {
-                "role": m["role"],
-                "content": m["content"]
-            }
-            for m in current_chat["messages"][-20:]
-        ]
-
-        try:
-
-            answer = ask_ayanfe(
-                user_input,
-                conversation_history=history_for_ai
-            )
-
-        except Exception as e:
-
-            error_text = str(e)
-
-            if (
-                "429" in error_text
-                or "RESOURCE_EXHAUSTED" in error_text
-            ):
-
-                answer = (
-                    "AYANFE is temporarily unable to "
-                    "generate a full AI response. "
-                    "Please try again later."
-                )
-
-            else:
-
-                answer = (
-                    "AYANFE is temporarily unavailable. "
-                    "Please try again shortly."
-                )
 
     # ----------------------------------------
     # SAVE ANSWER
@@ -539,5 +650,19 @@ if send_clicked and typed_message.strip():
         "assistant",
         answer
     )
+
+
+    # ----------------------------------------
+    # CLEAR ATTACHMENT
+    # ----------------------------------------
+
+    st.session_state.uploaded_file = None
+
+    st.session_state.show_attachments = False
+
+
+    # ----------------------------------------
+    # REFRESH
+    # ----------------------------------------
 
     st.rerun()
