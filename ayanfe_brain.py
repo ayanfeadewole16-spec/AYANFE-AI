@@ -104,36 +104,36 @@ def local_response(user_message):
         )
 
 
-    # ----------------------------------------
-    # DATE
-    # ----------------------------------------
+# ----------------------------------------
+# DATE
+# ----------------------------------------
 
-    if any(phrase in text for phrase in [
-        "what is today's date",
-        "what is today's date?",
-        "what date is it",
-        "what date is it?",
-        "today's date",
-        "todays date"
-    ]):
+if (
+    "today's date" in text
+    or "todays date" in text
+    or "what is today's date" in text
+    or "what is the date today" in text
+    or "what date is it" in text
+    or "what day is today" in text
+):
 
-        try:
+    try:
+        now = datetime.now(
+            ZoneInfo("Africa/Lagos")
+        )
 
-            now = datetime.now(
-                ZoneInfo("Africa/Lagos")
-            )
+        return (
+            f"Today is {now.strftime('%A, %B %d, %Y')}."
+        )
 
-            return (
-                f"Today is {now.strftime('%A, %B %d, %Y')}."
-            )
+    except Exception:
+        now = datetime.now()
 
-        except Exception:
-
-            now = datetime.now()
-
-            return (
-                f"Today is {now.strftime('%A, %B %d, %Y')}."
-            )
+        return (
+            f"Today is {now.strftime('%A, %B %d, %Y')}."
+        )
+        
+        
 
 
     # ----------------------------------------
