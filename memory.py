@@ -8,8 +8,8 @@ import uuid
 from datetime import datetime
 
 
-# Streamlit Cloud's project directory is read-only.
-# /tmp is writable during the running app.
+# Streamlit Cloud's application directory can be
+# read-only. /tmp is writable while the app runs.
 MEMORY_DIR = Path("/tmp/ayanfe_ai_memory")
 MEMORY_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -17,6 +17,7 @@ DB_PATH = MEMORY_DIR / "ayanfe_memory.db"
 
 
 def get_connection():
+
     conn = sqlite3.connect(
         str(DB_PATH),
         check_same_thread=False
@@ -94,7 +95,12 @@ def add_message(chat_id, role, content):
         (chat_id, role, content, created_at)
         VALUES (?, ?, ?, ?)
         """,
-        (chat_id, role, content, now)
+        (
+            chat_id,
+            role,
+            str(content),
+            now
+        )
     )
 
     conn.execute(
@@ -188,6 +194,32 @@ def list_chats():
         }
         for chat in chats
     ]
+
+
+def delete_chat(chat_id):
+
+    initialize_database()
+
+    conn = get_connection()
+
+    conn.execute(
+        """
+        DELETE FROM messages
+        WHERE chat_id = ?
+        """,
+        (chat_id,)
+    )
+
+    conn.execute(
+        """
+        DELETE FROM chats
+        WHERE chat_id = ?
+        """,
+        (chat_id,)
+    )
+
+    conn.commit()
+    conn.close()
 
 
 initialize_database()
