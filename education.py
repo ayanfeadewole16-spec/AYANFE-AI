@@ -1,4 +1,3 @@
-
 # ============================================
 # AYANFE AI V2 — EDUCATION SYSTEM
 # ============================================
@@ -15,21 +14,18 @@ EDUCATION_SUBJECTS = [
     "government",
     "computer science",
     "computer",
-    "science",
+    "science"
 ]
 
 
 EXAMINATIONS = [
     "waec",
     "jamb",
-    "neco",
+    "neco"
 ]
 
 
 def is_education_request(text):
-    """
-    Determine whether a request is educational.
-    """
 
     text = text.lower()
 
@@ -44,25 +40,34 @@ def is_education_request(text):
         "quiz",
         "practice",
         "exam",
-        "question",
+        "question"
     ]
 
-    if any(word in text for word in education_words):
+    if any(
+        word in text
+        for word in education_words
+    ):
+
         return True
 
-    if any(subject in text for subject in EDUCATION_SUBJECTS):
+    if any(
+        subject in text
+        for subject in EDUCATION_SUBJECTS
+    ):
+
         return True
 
-    if any(exam in text for exam in EXAMINATIONS):
+    if any(
+        exam in text
+        for exam in EXAMINATIONS
+    ):
+
         return True
 
     return False
 
 
 def get_education_format():
-    """
-    Return AYANFE's preferred educational response structure.
-    """
 
     return [
         "Simple explanation",
@@ -74,9 +79,6 @@ def get_education_format():
 
 
 def education_context():
-    """
-    Context that can later be passed to the AI model.
-    """
 
     return """
 You are helping a student.
@@ -92,6 +94,7 @@ When appropriate, structure educational answers as:
 Use clear language appropriate for the student's level.
 
 Support:
+
 - Mathematics
 - Physics
 - Chemistry
@@ -106,5 +109,5 @@ Support:
 - NECO
 - Other examinations
 
-Do not force this structure for questions where it would be unnatural.
+Do not force this structure when it would be unnatural.
 """
