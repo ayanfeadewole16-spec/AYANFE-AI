@@ -1,4 +1,3 @@
-
 # ============================================
 # AYANFE AI V2 — CHAT MANAGER
 # ============================================
@@ -13,35 +12,29 @@ from memory import (
 
 
 def new_chat():
-    """
-    Start a completely new conversation.
-    """
+    """Start a completely new conversation."""
     return create_chat()
 
 
 def get_chat(chat_id):
-    """
-    Open an existing conversation.
-    """
+    """Open an existing conversation."""
     return load_chat(chat_id)
 
 
 def send_message(chat_id, role, content):
-    """
-    Save a message to a specific conversation.
-    """
-    return add_message(chat_id, role, content)
+    """Save a message to a conversation."""
+    return add_message(
+        chat_id,
+        role,
+        content
+    )
 
 
 def get_history():
-    """
-    Get saved conversations for the sidebar/history.
-    """
+    """Get saved conversations."""
     return list_chats()
 
 
 def remove_chat(chat_id):
-    """
-    Delete a conversation.
-    """
+    """Delete a conversation."""
     return delete_chat(chat_id)
