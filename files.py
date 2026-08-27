@@ -1,4 +1,3 @@
-
 # ============================================
 # AYANFE AI V2 — FILE & IMAGE SYSTEM
 # ============================================
@@ -6,10 +5,17 @@
 from pathlib import Path
 import shutil
 
-PROJECT = Path("/content/drive/MyDrive/AYANFE_AI_V2")
+
+# Use the deployed AYANFE project directory.
+# This works on Streamlit Cloud and local deployment.
+PROJECT = Path(__file__).resolve().parent
+
 UPLOAD_DIR = PROJECT / "uploads"
 
-UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+UPLOAD_DIR.mkdir(
+    parents=True,
+    exist_ok=True
+)
 
 
 SUPPORTED_EXTENSIONS = {
@@ -19,14 +25,14 @@ SUPPORTED_EXTENSIONS = {
     ".png",
     ".jpg",
     ".jpeg",
-    ".webp"
+    ".webp",
+    ".mp4",
+    ".mov",
+    ".webm"
 }
 
 
 def save_uploaded_file(file_path):
-    """
-    Save a file into AYANFE's permanent upload folder.
-    """
 
     source = Path(file_path)
 
@@ -46,7 +52,10 @@ def save_uploaded_file(file_path):
 
     destination = UPLOAD_DIR / source.name
 
-    shutil.copy2(source, destination)
+    shutil.copy2(
+        source,
+        destination
+    )
 
     return {
         "success": True,
@@ -57,13 +66,12 @@ def save_uploaded_file(file_path):
 
 
 def extract_pdf_text(file_path):
-    """
-    Extract text from a PDF.
-    """
 
     from pypdf import PdfReader
 
-    reader = PdfReader(str(file_path))
+    reader = PdfReader(
+        str(file_path)
+    )
 
     pages = []
 
@@ -75,13 +83,12 @@ def extract_pdf_text(file_path):
 
 
 def extract_docx_text(file_path):
-    """
-    Extract text from a DOCX document.
-    """
 
     from docx import Document
 
-    document = Document(str(file_path))
+    document = Document(
+        str(file_path)
+    )
 
     return "\n".join(
         paragraph.text
@@ -90,9 +97,6 @@ def extract_docx_text(file_path):
 
 
 def extract_text_file(file_path):
-    """
-    Read a normal text file.
-    """
 
     return Path(file_path).read_text(
         encoding="utf-8",
@@ -101,11 +105,9 @@ def extract_text_file(file_path):
 
 
 def extract_text(file_path):
-    """
-    Automatically extract text from supported documents.
-    """
 
     path = Path(file_path)
+
     extension = path.suffix.lower()
 
     if extension == ".pdf":
@@ -121,11 +123,10 @@ def extract_text(file_path):
 
 
 def is_image(file_path):
-    """
-    Check whether a file is an image.
-    """
 
-    extension = Path(file_path).suffix.lower()
+    extension = Path(
+        file_path
+    ).suffix.lower()
 
     return extension in {
         ".png",
@@ -135,10 +136,20 @@ def is_image(file_path):
     }
 
 
+def is_video(file_path):
+
+    extension = Path(
+        file_path
+    ).suffix.lower()
+
+    return extension in {
+        ".mp4",
+        ".mov",
+        ".webm"
+    }
+
+
 def get_file_info(file_path):
-    """
-    Return basic information about a file.
-    """
 
     path = Path(file_path)
 
@@ -146,5 +157,6 @@ def get_file_info(file_path):
         "filename": path.name,
         "extension": path.suffix.lower(),
         "size_bytes": path.stat().st_size,
-        "is_image": is_image(path)
+        "is_image": is_image(path),
+        "is_video": is_video(path)
     }
