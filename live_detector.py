@@ -1,10 +1,6 @@
-
 # ============================================
 # AYANFE AI V2 — LIVE INFORMATION DETECTOR
 # ============================================
-
-import re
-
 
 STRONG_LIVE_PHRASES = [
     "today",
@@ -25,7 +21,7 @@ STRONG_LIVE_PHRASES = [
     "latest update",
     "recent update",
     "latest information",
-    "current information",
+    "current information"
 ]
 
 
@@ -43,7 +39,7 @@ SPORTS_LIVE_PHRASES = [
     "league table",
     "football table",
     "standings",
-    "fixtures",
+    "fixtures"
 ]
 
 
@@ -52,45 +48,55 @@ NEWS_TOPICS = [
     "announcement",
     "announcements",
     "election",
-    "government announcement",
+    "government announcement"
 ]
 
 
 def detect_live_requirement(user_message):
-    """
-    Determine whether a request requires current/live information.
-    """
 
     text = user_message.lower().strip()
 
     if not text:
+
         return {
             "needs_live_search": False,
             "reason": "Empty request."
         }
 
-    # Strong time-sensitive phrases
     for phrase in STRONG_LIVE_PHRASES:
+
         if phrase in text:
+
             return {
                 "needs_live_search": True,
-                "reason": f"Time-sensitive phrase detected: '{phrase}'."
+                "reason": (
+                    f"Time-sensitive phrase detected: "
+                    f"'{phrase}'."
+                )
             }
 
-    # Sports-specific live requests
     for phrase in SPORTS_LIVE_PHRASES:
+
         if phrase in text:
+
             return {
                 "needs_live_search": True,
-                "reason": f"Sports/current-result phrase detected: '{phrase}'."
+                "reason": (
+                    f"Sports/current-result phrase "
+                    f"detected: '{phrase}'."
+                )
             }
 
-    # News and announcement requests
     for topic in NEWS_TOPICS:
+
         if topic in text:
+
             return {
                 "needs_live_search": True,
-                "reason": f"Current-events topic detected: '{topic}'."
+                "reason": (
+                    f"Current-events topic detected: "
+                    f"'{topic}'."
+                )
             }
 
     return {
