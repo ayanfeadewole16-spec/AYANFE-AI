@@ -2,39 +2,32 @@
 # AYANFE AI V2 — MASTER ROUTER
 # ============================================
 
-from live_detector import detect_live_requirement
-from youtube import is_youtube_request
-from education import is_education_request
-
-
 def detect_intent(user_input):
 
     text = user_input.strip().lower()
 
-    # ----------------------------------------
+    # ========================================
     # IDENTITY
-    # ----------------------------------------
+    # ========================================
 
     if any(x in text for x in [
         "who created you",
         "who made you",
         "who built you",
-        "who is your creator"
+        "who is your creator",
+        "who developed you"
     ]):
         return "identity"
 
 
-    # ----------------------------------------
-    # GREETINGS / CASUAL
-    # ----------------------------------------
+    # ========================================
+    # GREETINGS
+    # ========================================
 
     if text in [
         "hi",
         "hello",
         "hey",
-        "hi ayanfe",
-        "hello ayanfe",
-        "hey ayanfe",
         "good morning",
         "good afternoon",
         "good evening",
@@ -43,77 +36,131 @@ def detect_intent(user_input):
         "how are you today",
         "how are you today?",
         "how is it going",
-        "how's it going",
-        "how are things"
+        "how's it going"
     ]:
         return "greeting"
 
 
-    # ----------------------------------------
+    # ========================================
     # DATE / TIME
-    # ----------------------------------------
+    # IMPORTANT:
+    # This MUST come BEFORE live search.
+    # ========================================
 
     if any(x in text for x in [
-        "what time is it",
-        "current time",
         "what is today's date",
+        "what is today's date?",
         "what date is it",
+        "what date is it?",
         "today's date",
-        "what day is it",
+        "todays date",
         "what day is today",
-        "time in",
-        "date in"
+        "what day is it"
     ]):
         return "datetime"
 
 
-    # ----------------------------------------
-    # YOUTUBE
-    # ----------------------------------------
+    if any(x in text for x in [
+        "what time is it",
+        "what time is it?",
+        "current time",
+        "what is the current time",
+        "what is the time"
+    ]):
+        return "datetime"
 
-    if is_youtube_request(text):
+
+    # ========================================
+    # YOUTUBE
+    # ========================================
+
+    if any(x in text for x in [
+        "youtube",
+        "youtube video",
+        "video on youtube",
+        "find me a video",
+        "find a video"
+    ]):
         return "youtube"
 
 
-    # ----------------------------------------
+    # ========================================
     # LIVE INFORMATION
-    # ----------------------------------------
+    # ========================================
 
-    live = detect_live_requirement(text)
-
-    if live.get("needs_live_search"):
+    if any(x in text for x in [
+        "latest news",
+        "breaking news",
+        "recent news",
+        "current news",
+        "latest update",
+        "latest information",
+        "current events",
+        "right now",
+        "currently",
+        "live score",
+        "live scores",
+        "latest score",
+        "match result",
+        "match results",
+        "football result",
+        "football results",
+        "league table",
+        "football table",
+        "standings",
+        "fixtures"
+    ]):
         return "live"
 
 
-    # ----------------------------------------
+    # ========================================
     # EDUCATION
-    # ----------------------------------------
+    # ========================================
 
-    if is_education_request(text):
+    if any(x in text for x in [
+        "explain",
+        "solve",
+        "teach me",
+        "study",
+        "homework",
+        "assignment",
+        "revision",
+        "quiz",
+        "practice question",
+        "waec",
+        "jamb",
+        "neco",
+        "mathematics",
+        "math",
+        "physics",
+        "chemistry",
+        "biology",
+        "economics",
+        "government",
+        "literature",
+        "computer science"
+    ]):
         return "education"
 
 
-    # ----------------------------------------
+    # ========================================
     # PROGRAMMING
-    # ----------------------------------------
+    # ========================================
 
     if any(x in text for x in [
         "python",
         "javascript",
         "programming",
-        "code",
         "coding",
         "debug",
-        "program",
-        "html",
-        "css"
+        "code"
     ]):
         return "programming"
 
 
-    # ----------------------------------------
+    # ========================================
     # WRITING
-    # ----------------------------------------
+    # ========================================
 
     if any(x in text for x in [
         "write",
@@ -122,35 +169,27 @@ def detect_intent(user_input):
         "letter",
         "caption",
         "story",
-        "email",
-        "paragraph",
-        "application"
+        "email"
     ]):
         return "writing"
 
 
-    # ----------------------------------------
+    # ========================================
     # GENERAL
-    # ----------------------------------------
+    # ========================================
 
     return "general"
 
+
+# ============================================
+# ROUTE REQUEST
+# ============================================
 
 def route_request(user_input):
 
     intent = detect_intent(user_input)
 
-    # Gemini is NOT automatically required
-    # for specialist/local requests.
-
     return {
         "intent": intent,
-
-        "use_gemini": intent == "general",
-
-        "needs_live_search": intent == "live",
-
-        "needs_youtube": intent == "youtube",
-
-        "needs_education": intent == "education"
+        "use_gemini": False
     }
