@@ -1,110 +1,19 @@
 # ============================================
-# AYANFE AI V2 — CORE BRAIN
+# AYANFE AI V2 — INDEPENDENT CORE BRAIN
 # ============================================
 
-import os
-import re
-
 from datetime import datetime
-
-from google import genai
+from zoneinfo import ZoneInfo
 
 from master_router import route_request
-
-from date_time import (
-    get_local_datetime,
-    get_time_in_timezone
-)
-
-from live_search import (
-    search_web,
-    format_search_results
-)
-
-from youtube import (
-    get_best_youtube_video
-)
-
-from education import (
-    education_context
-)
-
-
-MODEL = "gemini-3.6-flash"
 
 
 # ============================================
 # AYANFE IDENTITY
 # ============================================
 
-AYANFE_SYSTEM_INSTRUCTION = """
-
-You are AYANFE AI.
-
-You were created by Ayanfe.
-
-You are a modern general-purpose AI assistant
-and learning companion.
-
-You are NOT education-only.
-
-You can help with:
-
-Education
-General questions
-Writing
-Programming
-Research
-Current information
-News
-Football and sports
-YouTube
-Files
-Images
-Voice
-Everyday questions
-Study assistance
-
-Be clear, helpful and natural.
-
-Never pretend that information is current
-unless it has actually been obtained from a
-current source.
-
-When helping with education, use this structure
-when appropriate:
-
-1. Simple explanation
-2. Detailed explanation
-3. Example
-4. Practice question
-5. Quiz
-
-Do not force the structure when it is unnecessary.
-
-"""
-
-
-# ============================================
-# GEMINI CLIENT
-# ============================================
-
-def get_client(api_key=None):
-
-    key = (
-        api_key
-        or os.getenv("GEMINI_API_KEY")
-    )
-
-    if not key:
-
-        raise RuntimeError(
-            "GEMINI_API_KEY is not configured."
-        )
-
-    return genai.Client(
-        api_key=key
-    )
+AYANFE_NAME = "AYANFE AI"
+AYANFE_CREATOR = "Ayanfe"
 
 
 # ============================================
@@ -113,27 +22,19 @@ def get_client(api_key=None):
 
 def local_response(user_message):
 
-    clean = (
-        user_message
-        .strip()
-        .lower()
-    )
-
+    text = user_message.strip().lower()
 
     # ----------------------------------------
     # IDENTITY
     # ----------------------------------------
 
-    if clean in [
+    if any(phrase in text for phrase in [
         "who created you",
-        "who created you?",
         "who made you",
-        "who made you?",
         "who built you",
-        "who built you?",
         "who is your creator",
-        "who is your creator?"
-    ]:
+        "who developed you"
+    ]):
 
         return (
             "I was created by Ayanfe."
@@ -144,7 +45,7 @@ def local_response(user_message):
     # GREETINGS
     # ----------------------------------------
 
-    if clean in [
+    if text in [
         "hi",
         "hello",
         "hey",
@@ -158,16 +59,15 @@ def local_response(user_message):
 
         return (
             "Hello! 👋 I'm AYANFE AI. "
-            "I'm ready to help. What would "
-            "you like to do today?"
+            "How can I help you today?"
         )
 
 
     # ----------------------------------------
-    # HOW ARE YOU
+    # CASUAL CONVERSATION
     # ----------------------------------------
 
-    if clean in [
+    if text in [
         "how are you",
         "how are you?",
         "how are you today",
@@ -179,8 +79,8 @@ def local_response(user_message):
 
         return (
             "I'm doing great! 😊 "
-            "I'm ready to help you with "
-            "whatever you need."
+            "I'm ready to help. What would you "
+            "like to do today?"
         )
 
 
@@ -188,7 +88,7 @@ def local_response(user_message):
     # CAPABILITIES
     # ----------------------------------------
 
-    if clean in [
+    if text in [
         "what can you do",
         "what can you do?",
         "what are your features",
@@ -197,11 +97,10 @@ def local_response(user_message):
     ]:
 
         return (
-            "I can help with education, "
-            "writing, programming, research, "
-            "current information, sports, "
-            "YouTube, files, everyday questions "
-            "and much more."
+            "I can help with education, programming, "
+            "writing, research, everyday questions, "
+            "current information, sports, YouTube, "
+            "files, images, voice and more."
         )
 
 
@@ -209,317 +108,112 @@ def local_response(user_message):
     # DATE
     # ----------------------------------------
 
-    if clean in [
+    if any(phrase in text for phrase in [
         "what is today's date",
         "what is today's date?",
         "what date is it",
         "what date is it?",
-        "today's date"
-    ]:
+        "today's date",
+        "todays date"
+    ]):
 
-        current = get_local_datetime()
+        try:
 
-        return (
-            f"Today is "
-            f"{current['formatted_date']}."
-        )
-
-
-    # ----------------------------------------
-    # LOCAL TIME
-    # ----------------------------------------
-
-    if clean in [
-        "what time is it",
-        "what time is it?",
-        "what is the current time",
-        "what is the current time?"
-    ]:
-
-        current = get_local_datetime()
-
-        return (
-            f"The current time is "
-            f"{current['time']} "
-            f"({current['timezone']})."
-        )
-
-
-    return None
-
-
-# ============================================
-# WORLD TIME
-# ============================================
-
-def handle_time_request(user_message):
-
-    text = (
-        user_message
-        .strip()
-        .lower()
-    )
-
-
-    timezone_map = {
-
-        "nigeria":
-            "Africa/Lagos",
-
-        "lagos":
-            "Africa/Lagos",
-
-        "london":
-            "Europe/London",
-
-        "uk":
-            "Europe/London",
-
-        "united kingdom":
-            "Europe/London",
-
-        "new york":
-            "America/New_York",
-
-        "los angeles":
-            "America/Los_Angeles",
-
-        "california":
-            "America/Los_Angeles",
-
-        "tokyo":
-            "Asia/Tokyo",
-
-        "japan":
-            "Asia/Tokyo",
-
-        "dubai":
-            "Asia/Dubai",
-
-        "india":
-            "Asia/Kolkata",
-
-        "south africa":
-            "Africa/Johannesburg"
-    }
-
-
-    for location, timezone_name in timezone_map.items():
-
-        if location in text:
-
-            return get_time_in_timezone(
-                timezone_name
+            now = datetime.now(
+                ZoneInfo("Africa/Lagos")
             )
-
-
-    return None
-
-
-# ============================================
-# LIVE WEB INFORMATION
-# ============================================
-
-def handle_live_request(user_message):
-
-    result = search_web(
-        user_message,
-        max_results=5
-    )
-
-
-    if not result.get("success"):
-
-        return (
-            "I couldn't reach the live web "
-            "search right now. Please try again."
-        )
-
-
-    results = result.get(
-        "results",
-        []
-    )
-
-
-    if not results:
-
-        return (
-            "I couldn't find reliable current "
-            "information for that request."
-        )
-
-
-    context = format_search_results(
-        result
-    )
-
-
-    return (
-        "Here is what I found from current "
-        "web sources:\n\n"
-        f"{context}"
-    )
-
-
-# ============================================
-# YOUTUBE
-# ============================================
-
-def handle_youtube_request(user_message):
-
-    result = get_best_youtube_video(
-        user_message
-    )
-
-
-    if not result.get("success"):
-
-        return (
-            "I couldn't find a suitable "
-            "YouTube video right now."
-        )
-
-
-    return (
-        f"🎬 {result['title']}\n\n"
-        f"{result['description']}\n\n"
-        f"Watch here:\n{result['url']}"
-    )
-
-
-# ============================================
-# GEMINI FALLBACK
-# ============================================
-
-def gemini_fallback(
-    user_message,
-    conversation_history=None,
-    api_key=None
-):
-
-    try:
-
-        client = get_client(
-            api_key
-        )
-
-
-        prompt = (
-            AYANFE_SYSTEM_INSTRUCTION
-            + "\n\n"
-        )
-
-
-        if conversation_history:
-
-            prompt += (
-                "Previous conversation:\n"
-            )
-
-            for message in conversation_history:
-
-                role = message.get(
-                    "role",
-                    "user"
-                )
-
-                content = message.get(
-                    "content",
-                    ""
-                )
-
-                prompt += (
-                    f"{role}: "
-                    f"{content}\n"
-                )
-
-            prompt += "\n"
-
-
-        prompt += (
-            f"User: {user_message}\n\n"
-            "AYANFE:"
-        )
-
-
-        response = client.models.generate_content(
-            model=MODEL,
-            contents=prompt
-        )
-
-
-        return response.text
-
-
-    except Exception as e:
-
-        error_text = str(e)
-
-
-        # ------------------------------------
-        # QUOTA EXHAUSTED
-        # ------------------------------------
-
-        if (
-            "429" in error_text
-            or "RESOURCE_EXHAUSTED"
-            in error_text
-            or "quota"
-            in error_text.lower()
-        ):
 
             return (
-                "AYANFE is busy right now. 🧠\n\n"
-                "This version of AYANFE is "
-                "temporarily busy with its "
-                "advanced AI service.\n\n"
-                "Try asking me something else "
-                "that I can handle with my "
-                "other systems."
+                f"Today is {now.strftime('%A, %B %d, %Y')}."
+            )
+
+        except Exception:
+
+            now = datetime.now()
+
+            return (
+                f"Today is {now.strftime('%A, %B %d, %Y')}."
             )
 
 
-        # ------------------------------------
-        # OTHER GEMINI ERROR
-        # ------------------------------------
+    # ----------------------------------------
+    # TIME — NIGERIA
+    # ----------------------------------------
+
+    if any(phrase in text for phrase in [
+        "what time is it",
+        "what time is it?",
+        "current time",
+        "current time?",
+        "what is the time",
+        "what is the time?"
+    ]):
+
+        try:
+
+            now = datetime.now(
+                ZoneInfo("Africa/Lagos")
+            )
+
+            return (
+                "The current time in Nigeria is "
+                f"{now.strftime('%I:%M %p')}."
+            )
+
+        except Exception:
+
+            now = datetime.now()
+
+            return (
+                f"The current time is "
+                f"{now.strftime('%I:%M %p')}."
+            )
+
+
+    # ----------------------------------------
+    # SIMPLE THANKS
+    # ----------------------------------------
+
+    if text in [
+        "thanks",
+        "thank you",
+        "thanks ayanfe",
+        "thank you ayanfe"
+    ]:
 
         return (
-            "AYANFE's advanced AI service "
-            "is temporarily unavailable.\n\n"
-            "I can still help with many "
-            "other things using my built-in "
-            "systems."
+            "You're welcome! 😊"
         )
 
 
+    # ----------------------------------------
+    # SIMPLE GOODBYE
+    # ----------------------------------------
+
+    if text in [
+        "bye",
+        "goodbye",
+        "see you",
+        "see you later"
+    ]:
+
+        return (
+            "Goodbye! 👋 I'll be here whenever "
+            "you need me."
+        )
+
+
+    return None
+
+
 # ============================================
-# MAIN AYANFE BRAIN
+# SPECIALIST SYSTEMS
 # ============================================
 
-def ask_ayanfe(
+def specialist_response(
     user_message,
-    conversation_history=None,
-    api_key=None
+    conversation_history=None
 ):
-
-
-    # ========================================
-    # 1. LOCAL SYSTEM FIRST
-    # ========================================
-
-    local_answer = local_response(
-        user_message
-    )
-
-    if local_answer is not None:
-
-        return local_answer
-
-
-    # ========================================
-    # 2. WORLD TIME
-    # ========================================
 
     route = route_request(
         user_message
@@ -531,113 +225,275 @@ def ask_ayanfe(
     )
 
 
+    # ----------------------------------------
+    # LOCAL / BUILT-IN
+    # ----------------------------------------
+
+    local_answer = local_response(
+        user_message
+    )
+
+    if local_answer is not None:
+
+        return local_answer
+
+
+    # ----------------------------------------
+    # DATE / TIME
+    # ----------------------------------------
+
     if intent == "datetime":
 
-        time_answer = handle_time_request(
+        return local_response(
             user_message
         )
 
-        if time_answer:
 
-            return time_answer
-
-
-        local_answer = local_response(
-            user_message
-        )
-
-        if local_answer:
-
-            return local_answer
-
-
-    # ========================================
-    # 3. LIVE INFORMATION
-    # ========================================
+    # ----------------------------------------
+    # LIVE INFORMATION
+    # ----------------------------------------
 
     if intent == "live":
 
-        return handle_live_request(
-            user_message
-        )
+        try:
 
+            from live_search import search_web
 
-    # ========================================
-    # 4. YOUTUBE
-    # ========================================
+            result = search_web(
+                user_message,
+                max_results=5
+            )
 
-    if intent == "youtube":
+            if result.get("success"):
 
-        return handle_youtube_request(
-            user_message
-        )
+                results = result.get(
+                    "results",
+                    []
+                )
 
+                if results:
 
-    # ========================================
-    # 5. EDUCATION
-    # ========================================
+                    answer = (
+                        "Here are the latest results "
+                        "I found:\n\n"
+                    )
 
-    if intent == "education":
+                    for item in results[:5]:
 
-        # Education can be handled by
-        # AYANFE's specialist systems.
-        #
-        # Complex questions can still
-        # fall through to Gemini.
+                        title = item.get(
+                            "title",
+                            "Untitled"
+                        )
 
-        text = user_message.lower()
+                        snippet = item.get(
+                            "snippet",
+                            ""
+                        )
 
-        simple_patterns = [
-            "what is ",
-            "what are ",
-            "define ",
-            "meaning of ",
-            "who is ",
-            "name ",
-            "list "
-        ]
+                        url = item.get(
+                            "url",
+                            ""
+                        )
 
-        if any(
-            pattern in text
-            for pattern in simple_patterns
-        ):
+                        answer += (
+                            f"**{title}**\n"
+                            f"{snippet}\n"
+                            f"{url}\n\n"
+                        )
 
-            # Give AYANFE's local educational
-            # system a chance first.
-            #
-            # For now, broad educational
-            # knowledge goes to the advanced
-            # fallback if no local answer exists.
+                    return answer
+
+        except Exception:
 
             pass
 
-
-    # ========================================
-    # 6. PROGRAMMING / WRITING / GENERAL
-    # ========================================
-
-    # These may require advanced language
-    # reasoning, so Gemini is currently
-    # the fallback.
-
-    if route.get(
-        "use_gemini",
-        False
-    ):
-
-        return gemini_fallback(
-            user_message,
-            conversation_history,
-            api_key
+        return (
+            "I couldn't reach the live information "
+            "service right now. Please try again shortly."
         )
 
 
-    # ========================================
-    # 7. LAST LOCAL FALLBACK
-    # ========================================
+    # ----------------------------------------
+    # YOUTUBE
+    # ----------------------------------------
+
+    if intent == "youtube":
+
+        try:
+
+            from youtube import (
+                get_best_youtube_video
+            )
+
+            result = get_best_youtube_video(
+                user_message
+            )
+
+            if result.get("success"):
+
+                return (
+                    f"🎥 **{result['title']}**\n\n"
+                    f"{result['description']}\n\n"
+                    f"▶️ {result['url']}"
+                )
+
+        except Exception:
+
+            pass
+
+        return (
+            "I couldn't find a suitable YouTube "
+            "video right now. Please try again."
+        )
+
+
+    # ----------------------------------------
+    # EDUCATION
+    # ----------------------------------------
+
+    if intent == "education":
+
+        try:
+
+            from education import (
+                education_context
+            )
+
+            return (
+                "I can handle this as an educational "
+                "request.\n\n"
+                "Please give me the exact question or "
+                "topic you want help with."
+            )
+
+        except Exception:
+
+            return (
+                "Please send me the exact educational "
+                "question and I'll help you work through it."
+            )
+
+
+    # ----------------------------------------
+    # GENERAL BUILT-IN ANSWERS
+    # ----------------------------------------
+
+    if intent == "general":
+
+        return general_response(
+            user_message
+        )
+
+
+    return None
+
+
+# ============================================
+# GENERAL AYANFE RESPONSE SYSTEM
+# ============================================
+
+def general_response(user_message):
+
+    text = user_message.strip()
+
+    lower = text.lower()
+
+
+    # ----------------------------------------
+    # SIMPLE EVERYDAY QUESTIONS
+    # ----------------------------------------
+
+    if "what is your name" in lower:
+
+        return (
+            "My name is AYANFE AI."
+        )
+
+
+    if "what do you do" in lower:
+
+        return (
+            "I'm AYANFE AI, a general-purpose "
+            "AI assistant and learning companion. "
+            "I can help with questions, learning, "
+            "writing, programming, research and "
+            "everyday tasks."
+        )
+
+
+    # ----------------------------------------
+    # BASIC HEALTH INFORMATION
+    # ----------------------------------------
+
+    health_words = [
+        "leg pain",
+        "my leg is paining",
+        "my leg hurts",
+        "headache",
+        "stomach pain",
+        "back pain",
+        "fever",
+        "cough"
+    ]
+
+    if any(word in lower for word in health_words):
+
+        return (
+            "There can be many possible reasons for "
+            "pain or another symptom, and I can't "
+            "diagnose the cause from a message alone.\n\n"
+            "For something like leg pain, it can be "
+            "related to things such as a minor injury, "
+            "muscle strain, or another health issue. "
+            "Tell a parent, guardian, school nurse, "
+            "or healthcare professional if the pain "
+            "is persistent, severe, getting worse, or "
+            "worrying you.\n\n"
+            "If you have severe symptoms or feel that "
+            "something is seriously wrong, get medical "
+            "help promptly."
+        )
+
+
+    # ----------------------------------------
+    # UNKNOWN REQUEST
+    # ----------------------------------------
 
     return (
-        "I'm AYANFE AI. "
-        "I don't have a built-in system "
-        "for that request yet."
+        "I'm AYANFE AI. I can work on this using my "
+        "built-in systems. Tell me a little more about "
+        "what you need, and I'll do my best to help."
+    )
+
+
+# ============================================
+# MAIN AYANFE FUNCTION
+# ============================================
+
+def ask_ayanfe(
+    user_message,
+    conversation_history=None,
+    api_key=None
+):
+
+    # ----------------------------------------
+    # 1. AYANFE'S OWN SYSTEMS FIRST
+    # ----------------------------------------
+
+    answer = specialist_response(
+        user_message,
+        conversation_history
+    )
+
+    if answer is not None:
+
+        return answer
+
+
+    # ----------------------------------------
+    # 2. FINAL INDEPENDENT RESPONSE
+    # ----------------------------------------
+
+    return general_response(
+        user_message
     )
