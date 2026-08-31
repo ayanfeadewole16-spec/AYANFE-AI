@@ -1,250 +1,24 @@
 # ============================================
-# AYANFE AI V2 — SMART MASTER ROUTER
+# AYANFE AI V2 — MASTER ROUTER
 # ============================================
 
 import re
 
 
 # ============================================
-# NORMALIZE USER INPUT
+# NORMALIZE USER REQUEST
 # ============================================
 
 def normalize(text):
-
     text = text.lower().strip()
 
     # Remove unnecessary punctuation
-    text = re.sub(r"[^\w\s']", " ", text)
+    text = re.sub(r"[!?.,]+", " ", text)
 
     # Remove repeated spaces
     text = re.sub(r"\s+", " ", text)
 
-    return text
-
-
-# ============================================
-# DATE / TIME DETECTION
-# ============================================
-
-def is_datetime_request(text):
-
-    date_words = [
-        "date",
-        "day",
-        "calendar"
-    ]
-
-    time_words = [
-        "time",
-        "clock"
-    ]
-
-    today_words = [
-        "today",
-        "todays",
-        "this day",
-        "now"
-    ]
-
-    if (
-        any(word in text for word in date_words)
-        and
-        any(word in text for word in today_words)
-    ):
-        return True
-
-    if (
-        "what day" in text
-        and
-        ("today" in text or "now" in text)
-    ):
-        return True
-
-    if (
-        any(word in text for word in time_words)
-        and
-        any(word in text for word in [
-            "current",
-            "now",
-            "today"
-        ])
-    ):
-        return True
-
-    return False
-
-
-# ============================================
-# LIVE INFORMATION DETECTION
-# ============================================
-
-def is_live_request(text):
-
-    live_words = [
-        "latest",
-        "recent",
-        "currently",
-        "current",
-        "right now",
-        "today",
-        "this week",
-        "this month",
-        "breaking",
-        "new update",
-        "new updates",
-        "update",
-        "news"
-    ]
-
-    return any(
-        word in text
-        for word in live_words
-    )
-
-
-# ============================================
-# FOOTBALL / SPORTS DETECTION
-# ============================================
-
-def is_sports_request(text):
-
-    sports_words = [
-        "football",
-        "soccer",
-        "premier league",
-        "epl",
-        "english premier league",
-        "champions league",
-        "europa league",
-        "conference league",
-        "fifa",
-        "world cup",
-        "transfer",
-        "transfers",
-        "signing",
-        "signings",
-        "player moved",
-        "club",
-        "match",
-        "matches",
-        "fixture",
-        "fixtures",
-        "score",
-        "scores",
-        "league table",
-        "standings"
-    ]
-
-    return any(
-        word in text
-        for word in sports_words
-    )
-
-
-# ============================================
-# YOUTUBE
-# ============================================
-
-def is_youtube_request(text):
-
-    return any(
-        word in text
-        for word in [
-            "youtube",
-            "youtube video",
-            "video on youtube"
-        ]
-    )
-
-
-# ============================================
-# EDUCATION
-# ============================================
-
-def is_education_request(text):
-
-    words = [
-        "homework",
-        "assignment",
-        "study",
-        "revision",
-        "exam",
-        "waec",
-        "jamb",
-        "neco",
-        "mathematics",
-        "math",
-        "physics",
-        "chemistry",
-        "biology",
-        "economics",
-        "government",
-        "literature",
-        "computer science",
-        "teach me",
-        "explain this",
-        "solve this",
-        "quiz me"
-    ]
-
-    return any(
-        word in text
-        for word in words
-    )
-
-
-# ============================================
-# PROGRAMMING
-# ============================================
-
-def is_programming_request(text):
-
-    words = [
-        "python",
-        "javascript",
-        "html",
-        "css",
-        "programming",
-        "coding",
-        "code",
-        "debug",
-        "error in my code",
-        "function",
-        "class",
-        "api",
-        "github",
-        "streamlit"
-    ]
-
-    return any(
-        word in text
-        for word in words
-    )
-
-
-# ============================================
-# WRITING
-# ============================================
-
-def is_writing_request(text):
-
-    words = [
-        "write",
-        "rewrite",
-        "essay",
-        "letter",
-        "email",
-        "caption",
-        "speech",
-        "story",
-        "application",
-        "paragraph"
-    ]
-
-    return any(
-        word in text
-        for word in words
-    )
+    return text.strip()
 
 
 # ============================================
@@ -255,37 +29,42 @@ def detect_intent(user_input):
 
     text = normalize(user_input)
 
-
     # ----------------------------------------
     # IDENTITY
     # ----------------------------------------
 
-    if any(
-        phrase in text
-        for phrase in [
-            "who created you",
-            "who made you",
-            "who built you",
-            "who is your creator",
-            "who developed you"
-        ]
-    ):
+    identity_phrases = [
+        "who created you",
+        "who made you",
+        "who built you",
+        "who is your creator",
+        "who developed you"
+    ]
+
+    if any(phrase in text for phrase in identity_phrases):
         return "identity"
 
 
     # ----------------------------------------
-    # GREETING
+    # GREETINGS / CASUAL
     # ----------------------------------------
 
-    if text in [
+    greeting_words = [
         "hi",
         "hello",
         "hey",
         "good morning",
         "good afternoon",
-        "good evening"
-    ]:
-
+        "good evening",
+        "how are you",
+        "how are you today",
+        "how is it going",
+        "how are things"
+    ]
+    if any(
+        text == word or text.startswith(word + " ")
+        for word in greeting_words
+    ):
         return "greeting"
 
 
@@ -293,8 +72,27 @@ def detect_intent(user_input):
     # DATE / TIME
     # ----------------------------------------
 
-    if is_datetime_request(text):
+    date_words = [
+        "today date",
+        "todays date",
+        "what date is it",
+        "date today",
+        "what day is today",
+        "which date is today"
+    ]
 
+    time_words = [
+        "what time is it",
+        "current time",
+        "time right now",
+        "what is the time",
+        "tell me the time"
+    ]
+
+    if any(word in text for word in date_words):
+        return "datetime"
+
+    if any(word in text for word in time_words):
         return "datetime"
 
 
@@ -302,48 +100,127 @@ def detect_intent(user_input):
     # YOUTUBE
     # ----------------------------------------
 
-    if is_youtube_request(text):
+    youtube_words = [
+        "youtube",
+        "youtube video",
+        "video on youtube",
+        "find me a video",
+        "find a video"
+    ]
 
+    if any(word in text for word in youtube_words):
         return "youtube"
 
 
     # ----------------------------------------
-    # SPORTS + LIVE
-    # IMPORTANT:
-    # Sports live requests go to LIVE SEARCH.
+    # FOOTBALL / SPORTS
     # ----------------------------------------
 
-    if is_sports_request(text):
+    sports_words = [
+        "football",
+        "soccer",
+        "premier league",
+        "epl",
+        "champions league",
+        "europa league",
+        "conference league",
+        "la liga",
+        "serie a",
+        "bundesliga",
+        "ligue 1",
+        "arsenal",
+        "chelsea",
+        "liverpool",
+        "manchester united",
+        "man united",
+        "manchester city",
+        "tottenham",
+        "newcastle",
+        "real madrid",
+        "barcelona",
+        "bayern",
+        "psg",
+        "transfer",
+        "transfers",
+        "signed",
+        "signing",
+        "transfer window",
+        "fixture",
+        "fixtures",
+        "match",
+        "matches",
+        "score",
+        "scores",
+        "league table",
+        "standings",
+        "goal",
+        "goals",
+        "player"
+    ]
 
-        if is_live_request(text):
+    if any(word in text for word in sports_words):
 
-            return "live"
+        # Sports questions involving recent/current information
+        live_sports_words = [
+            "latest",
+            "recent",
+            "today",
+            "currently",
+            "current",
+            "now",
+            "latest transfer",
+            "recent transfer",
+            "new transfer",
+            "latest signing",
+            "recent signing",
+            "who won",
+            "who scored",
+            "score",
+            "scores",
+            "result",
+            "results",
+            "transfer",
+            "transfers",
+            "transfer news",
+            "transfer window",
+            "latest football news"
+        ]
 
-        # Transfer questions are normally
-        # time-sensitive even without "latest".
-
-        if any(
-            word in text
-            for word in [
-                "transfer",
-                "transfers",
-                "signing",
-                "signings",
-                "player moved"
-            ]
-        ):
-
+        if any(word in text for word in live_sports_words):
             return "live"
 
         return "sports"
 
 
     # ----------------------------------------
-    # LIVE INFORMATION
+    # GENERAL CURRENT INFORMATION / NEWS
     # ----------------------------------------
 
-    if is_live_request(text):
+    live_words = [
+        "latest",
+        "recent",
+        "currently",
+        "right now",
+        "today",
+        "yesterday",
+        "tomorrow",
+        "this morning",
+        "tonight",
+        "this week",
+        "this month",
+        "breaking",
+        "news",
+        "current events",
+        "latest news",
+        "recent news",
+        "latest update",
+        "recent update",
+        "current information",
+        "what happened today",
+        "what is happening"
+    ]
 
+    if any(word in text for word in live_words):
         return "live"
 
 
@@ -351,8 +228,37 @@ def detect_intent(user_input):
     # EDUCATION
     # ----------------------------------------
 
-    if is_education_request(text):
+    education_words = [
+        "study",
+        "learn",
+        "lesson",
+        "teach me",
+        "explain",
+        "homework",
+        "assignment",
+        "revision",
+        "quiz",
+        "practice",
+        "exam",
+        "question",
+        "mathematics",
+        "math",
+        "physics",
+        "chemistry",
+        "biology",
+        "english",
+        "literature",
+        "economics",
+        "government",
+        "geography",
+        "computer science",
+        "waec",
+        "jamb",
+        "neco",
+        "sat"
+    ]
 
+if any(word in text for word in education_words):
         return "education"
 
 
@@ -360,8 +266,23 @@ def detect_intent(user_input):
     # PROGRAMMING
     # ----------------------------------------
 
-    if is_programming_request(text):
+    programming_words = [
+        "python",
+        "javascript",
+        "html",
+        "css",
+        "programming",
+        "program",
+        "coding",
+        "code",
+        "debug",
+        "debugging",
+        "software",
+        "website",
+        "app development"
+    ]
 
+    if any(word in text for word in programming_words):
         return "programming"
 
 
@@ -369,8 +290,23 @@ def detect_intent(user_input):
     # WRITING
     # ----------------------------------------
 
-    if is_writing_request(text):
+    writing_words = [
+        "write",
+        "rewrite",
+        "rephrase",
+        "proofread",
+        "essay",
+        "letter",
+        "caption",
+        "story",
+        "email",
+        "message",
+        "paragraph",
+        "speech",
+        "application"
+    ]
 
+    if any(word in text for word in writing_words):
         return "writing"
 
 
@@ -389,9 +325,30 @@ def route_request(user_input):
 
     intent = detect_intent(user_input)
 
+    # ========================================
+    # AYANFE'S INDEPENDENCE RULE
+    # ========================================
+    #
+    # Built-in systems should handle:
+    #
+    # identity
+    # greetings
+    # date/time
+    # sports routing
+    # live information
+    # YouTube
+    # education
+    # programming
+    # writing
+    #
+    # Gemini should ONLY be used as a
+    # last-resort general AI fallback.
+    # ========================================
+
     return {
         "intent": intent,
 
-        # Gemini is intentionally disabled.
-        "use_gemini": False
+        "use_gemini": intent == "general"
     }
+
+
