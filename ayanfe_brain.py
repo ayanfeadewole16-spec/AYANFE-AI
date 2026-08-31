@@ -3,198 +3,127 @@
 # ============================================
 
 from datetime import datetime
-from zoneinfo import ZoneInfo
 
 from master_router import route_request
+from live_search import search_web
+from youtube import get_best_youtube_video
 
 
 # ============================================
 # AYANFE IDENTITY
 # ============================================
 
-AYANFE_NAME = "AYANFE AI"
-AYANFE_CREATOR = "Ayanfe"
+AYANFE_SYSTEM_INSTRUCTION = """
+You are AYANFE AI, a modern general-purpose
+AI assistant and learning companion.
+
+Your creator is Ayanfe.
+
+You are designed to operate independently
+using AYANFE's own built-in systems.
+
+Do not unnecessarily use external AI services.
+
+Do not automatically generate quizzes,
+practice questions or extra sections unless
+the user asks for them or they are genuinely
+useful to the request.
+"""
 
 
 # ============================================
-# LOCAL RESPONSE SYSTEM
+# LOCAL RESPONSES
 # ============================================
 
 def local_response(user_message):
 
     text = user_message.strip().lower()
 
-
-    # ========================================
+    # ----------------------------------------
     # IDENTITY
-    # ========================================
+    # ----------------------------------------
 
-    if any(phrase in text for phrase in [
+    if any(x in text for x in [
         "who created you",
         "who made you",
         "who built you",
-        "who is your creator",
-        "who developed you"
+        "who is your creator"
     ]):
-
         return "I was created by Ayanfe."
 
 
-    # ========================================
+    # ----------------------------------------
     # GREETINGS
-    # ========================================
+    # ----------------------------------------
 
     if text in [
         "hi",
         "hello",
         "hey",
-        "hi ayanfe",
-        "hello ayanfe",
-        "hey ayanfe",
         "good morning",
         "good afternoon",
         "good evening"
     ]:
-
-        return (
-            "Hello! 👋 I'm AYANFE AI. "
-            "How can I help you today?"
-        )
-
-
-    # ========================================
-    # CASUAL CONVERSATION
-    # ========================================
-
-    if text in [
-        "how are you",
-        "how are you?",
-        "how are you today",
-        "how are you today?",
-        "how is it going",
-        "how's it going",
-        "how are things"
-    ]:
-
         return (
             "I'm doing great! 😊 "
-            "I'm ready to help. What would you "
-            "like to do today?"
+            "I'm ready to help. What would you like "
+            "to do today?"
         )
 
 
-    # ========================================
-    # CAPABILITIES
-    # ========================================
-
-    if text in [
-        "what can you do",
-        "what can you do?",
-        "what are your features",
-        "what are your features?",
-        "help"
-    ]:
-
-        return (
-            "I can help with education, programming, "
-            "writing, research, current information, "
-            "sports, YouTube, files, images, voice, "
-            "and everyday questions."
-        )
-
-
-    # ========================================
+    # ----------------------------------------
     # DATE
-    # ========================================
+    # ----------------------------------------
 
-    if (
-        "today's date" in text
-        or "todays date" in text
-        or "what is today's date" in text
-        or "what is the date today" in text
-        or "what date is it" in text
-        or "what day is today" in text
-    ):
-
-        try:
-
-            now = datetime.now(
-                ZoneInfo("Africa/Lagos")
-            )
-
-            return (
-                f"Today is {now.strftime('%A, %B %d, %Y')}."
-            )
-
-        except Exception:
-
-            now = datetime.now()
-
-            return (
-                f"Today is {now.strftime('%A, %B %d, %Y')}."
-            )
-
-
-    # ========================================
-    # TIME — NIGERIA
-    # ========================================
-
-    if (
-        "what time is it" in text
-        or "current time" in text
-        or "what is the current time" in text
-        or "what is the time" in text
-    ):
-
-        try:
-
-            now = datetime.now(
-                ZoneInfo("Africa/Lagos")
-            )
-
-            return (
-                "The current time in Nigeria is "
-                f"{now.strftime('%I:%M %p')}."
-            )
-
-        except Exception:
-
-            now = datetime.now()
-
-            return (
-                f"The current time is "
-                f"{now.strftime('%I:%M %p')}."
-            )
-
-
-    # ========================================
-    # THANKS
-    # ========================================
-
-    if text in [
-        "thanks",
-        "thank you",
-        "thanks ayanfe",
-        "thank you ayanfe"
-    ]:
-
-        return "You're welcome! 😊"
-
-
-    # ========================================
-    # GOODBYE
-    # ========================================
-
-    if text in [
-        "bye",
-        "goodbye",
-        "see you",
-        "see you later"
-    ]:
+    if any(x in text for x in [
+        "today date",
+        "today's date",
+        "what date is it",
+        "what is the date today",
+        "what day is today",
+        "which date is today"
+    ]):
+        now = datetime.now()
 
         return (
-            "Goodbye! 👋 I'll be here whenever "
-            "you need me."
+            f"Today is {now.strftime('%A, %B %d, %Y')}."
+        )
+
+
+    # ----------------------------------------
+    # TIME
+    # ----------------------------------------
+
+    if any(x in text for x in [
+        "what time is it",
+        "what is the time",
+        "current time",
+        "time right now",
+        "tell me the time"
+    ]):
+        now = datetime.now()
+
+        return (
+            f"The current time is "
+            f"{now.strftime('%I:%M %p')}."
+        )
+
+
+    # ----------------------------------------
+    # CAPABILITIES
+    # ----------------------------------------
+
+    if any(x in text for x in [
+        "what can you do",
+        "what are your features",
+        "help me",
+        "what do you do"
+    ]):
+        return (
+            "I can help with education, general questions, "
+            "current information, football and sports, "
+            "programming, writing, research, YouTube, "
+            "files and everyday questions."
         )
 
 
@@ -205,171 +134,76 @@ def local_response(user_message):
 # LIVE INFORMATION
 # ============================================
 
-def live_response(user_message):
+def handle_live_request(user_message):
 
-    try:
+    result = search_web(
+        user_message,
+        max_results=5
+    )
 
-        from live_search import search_web
-
-        result = search_web(
-            user_message,
-            max_results=5
+    if not result.get("success"):
+        return (
+            "I couldn't reach the web search service "
+            "right now. Please try again shortly."
         )
 
-        if result.get("success"):
+    results = result.get("results", [])
 
-            results = result.get(
-                "results",
-                []
-            )
+    if not results:
+        return (
+            "I couldn't find reliable current information "
+            "for that request."
+        )
 
-            if results:
+    answer = "Here is what I found from current web sources:\n\n"
 
-                answer = (
-                    "Here are the latest results "
-                    "I found:\n\n"
-                )
+    for item in results[:5]:
 
-                for item in results:
+        title = item.get("title", "")
+        url = item.get("url", "")
+        snippet = item.get("snippet", "")
 
-                    title = item.get(
-                        "title",
-                        "Untitled"
-                    )
+        answer += f"**{title}**\n"
 
-                    snippet = item.get(
-                        "snippet",
-                        ""
-                    )
+        if snippet:
+            answer += f"{snippet}\n"
 
-                    url = item.get(
-                        "url",
-                        ""
-                    )
+        if url:
+            answer += f"Source: {url}\n"
 
-                    answer += (
-                        f"**{title}**\n"
-                        f"{snippet}\n"
-                        f"{url}\n\n"
-                    )
+        answer += "\n"
 
-                return answer
-
-    except Exception:
-        pass
-
-    return (
-        "I couldn't reach the live information "
-        "service right now. Please try again shortly."
-    )
+    return answer.strip()
 
 
 # ============================================
 # YOUTUBE
 # ============================================
 
-def youtube_response(user_message):
+def handle_youtube_request(user_message):
 
-    try:
-
-        from youtube import get_best_youtube_video
-
-        result = get_best_youtube_video(
-            user_message
-        )
-
-        if result.get("success"):
-
-            return (
-                f"🎥 **{result['title']}**\n\n"
-                f"{result['description']}\n\n"
-                f"▶️ {result['url']}"
-            )
-
-    except Exception:
-        pass
-
-    return (
-        "I couldn't find a suitable YouTube video "
-        "right now. Please try again."
+    result = get_best_youtube_video(
+        user_message
     )
 
-
-# ============================================
-# GENERAL AYANFE RESPONSES
-# ============================================
-
-def general_response(user_message):
-
-    text = user_message.strip()
-    lower = text.lower()
-
-
-    # ========================================
-    # NAME
-    # ========================================
-
-    if "what is your name" in lower:
-
-        return "My name is AYANFE AI."
-
-
-    # ========================================
-    # WHAT AYANFE DOES
-    # ========================================
-
-    if "what do you do" in lower:
-
+    if not result.get("success"):
         return (
-            "I'm AYANFE AI, a general-purpose AI "
-            "assistant and learning companion. "
-            "I can help with questions, learning, "
-            "writing, programming, research and "
-            "everyday tasks."
+            "I couldn't find a suitable YouTube video "
+            "for that request."
         )
 
+    title = result.get("title", "")
+    url = result.get("url", "")
+    description = result.get("description", "")
 
-    # ========================================
-    # BASIC HEALTH INFORMATION
-    # ========================================
+    answer = f"**{title}**\n\n"
 
-    health_words = [
-        "leg pain",
-        "my leg is paining",
-        "my leg hurts",
-        "headache",
-        "stomach pain",
-        "back pain",
-        "fever",
-        "cough"
-    ]
+    if description:
+        answer += f"{description}\n\n"
 
-    if any(word in lower for word in health_words):
+    answer += f"Watch on YouTube: {url}"
 
-        return (
-            "There can be many possible reasons for "
-            "pain or another symptom, and I can't "
-            "diagnose the cause from a message alone.\n\n"
-            "For leg pain, possible causes can include "
-            "a minor injury, muscle strain, or other "
-            "health problems. Please tell a parent, "
-            "guardian, school nurse, or healthcare "
-            "professional if the pain is persistent, "
-            "severe, getting worse, or worrying you.\n\n"
-            "If you have severe symptoms or feel that "
-            "something is seriously wrong, get medical "
-            "help promptly."
-        )
-
-
-    # ========================================
-    # SIMPLE FALLBACK
-    # ========================================
-
-    return (
-        "I'm AYANFE AI. Tell me a little more about "
-        "what you need and I'll do my best to help."
-    )
+    return answer
 
 
 # ============================================
@@ -383,25 +217,20 @@ def ask_ayanfe(
 ):
 
     # ========================================
-    # 1. LOCAL AYANFE SYSTEM
+    # 1. LOCAL AYANFE SYSTEMS
     # ========================================
 
-    local_answer = local_response(
-        user_message
-    )
+    answer = local_response(user_message)
 
-    if local_answer is not None:
-
-        return local_answer
+    if answer is not None:
+        return answer
 
 
     # ========================================
     # 2. ROUTER
     # ========================================
 
-    route = route_request(
-        user_message
-    )
+    route = route_request(user_message)
 
     intent = route.get(
         "intent",
@@ -410,12 +239,12 @@ def ask_ayanfe(
 
 
     # ========================================
-    # 3. LIVE SEARCH
+    # 3. LIVE INFORMATION
     # ========================================
 
     if intent == "live":
 
-        return live_response(
+        return handle_live_request(
             user_message
         )
 
@@ -426,15 +255,69 @@ def ask_ayanfe(
 
     if intent == "youtube":
 
-        return youtube_response(
+        return handle_youtube_request(
             user_message
         )
 
 
     # ========================================
-    # 5. GENERAL AYANFE
+    # 5. SPORTS
     # ========================================
 
-    return general_response(
-        user_message
+    if intent == "sports":
+
+        return handle_live_request(
+            user_message
+        )
+
+
+    # ========================================
+    # 6. EDUCATION
+    # ========================================
+
+    if intent == "education":
+
+        return (
+            "I can handle this as an education request. "
+            "Tell me the exact question or topic and "
+            "I'll work through it with you."
+        )
+
+
+    # ========================================
+    # 7. PROGRAMMING
+    # ========================================
+
+    if intent == "programming":
+
+        return (
+            "I can help with the programming problem. "
+            "Send me the code or describe what you "
+            "want the program to do."
+        )
+
+
+    # ========================================
+    # 8. WRITING
+    # ========================================
+
+    if intent == "writing":
+
+        return (
+            "Yes, I can help with that. "
+            "Send me the text or tell me what you "
+            "want to write."
+        )
+
+
+    # ========================================
+    # 9. GENERAL — NO GEMINI
+    # ========================================
+
+    return (
+        "I'm AYANFE AI. I can handle many requests "
+        "using my built-in systems, but I don't yet "
+        "have a built-in system for that particular "
+        "request."
     )
+
