@@ -1,226 +1,262 @@
 # ============================================
-# AYANFE AI V2 — MASTER ROUTER
+# AYANFE AI V2 — FLEXIBLE MASTER ROUTER
 # ============================================
 
 import re
 
 
 def normalize(text):
+    """
+    Clean the user's message without requiring
+    exact wording.
+    """
+    if not text:
+        return ""
+
     text = text.lower().strip()
-    text = re.sub(r"[!?.,]+", " ", text)
+
     text = re.sub(r"\s+", " ", text)
-    return text.strip()
+
+    return text
 
 
 def detect_intent(user_input):
 
     text = normalize(user_input)
 
-    # Identity
-    if any(x in text for x in [
-        "who created you",
-        "who made you",
-        "who built you",
-        "who is your creator",
-        "who developed you"
-    ]):
+    if not text:
+        return "general"
+
+    # ----------------------------------------
+    # IDENTITY
+    # ----------------------------------------
+
+    identity_words = [
+        "created",
+        "made",
+        "built",
+        "creator",
+        "who are you"
+    ]
+
+    if (
+        any(word in text for word in identity_words)
+        and (
+            "you" in text
+            or "ayanfe" in text
+        )
+    ):
         return "identity"
 
-    # Greetings
-    if any(x in text for x in [
-        "hi",
-        "hello",
-        "hey",
-        "good morning",
-        "good afternoon",
-        "good evening",
-        "how are you",
-        "how are you today",
-        "how is it going",
-        "how are things"
-    ]):
-        return "greeting"
 
-    # Date and time
-    if any(x in text for x in [
-        "today date",
-        "todays date",
-        "what date is it",
-        "date today",
-        "what day is today",
-        "which date is today",
-        "what time is it",
-        "current time",
-        "time right now",
-        "what is the time"
-    ]):
+    # ----------------------------------------
+    # DATE / TIME
+    # ----------------------------------------
+
+    if (
+        ("date" in text or "day" in text)
+        and (
+            "today" in text
+            or "now" in text
+            or "current" in text
+        )
+    ):
         return "datetime"
 
-    # YouTube
-    if any(x in text for x in [
-        "youtube",
-        "youtube video",
-        "video on youtube",
-        "find me a video",
-        "find a video"
-    ]):
+    if (
+        "time" in text
+        and (
+            "now" in text
+            or "current" in text
+            or "today" in text
+        )
+    ):
+        return "datetime"
+
+
+    # ----------------------------------------
+    # YOUTUBE
+    # ----------------------------------------
+    if "youtube" in text:
         return "youtube"
 
-    # Football and sports
-    if any(x in text for x in [
+    if (
+        "video" in text
+        and (
+            "watch" in text
+            or "find" in text
+            or "show" in text
+            or "youtube" in text
+        )
+    ):
+        return "youtube"
+
+
+    # ----------------------------------------
+    # LIVE / CURRENT INFORMATION
+    # ----------------------------------------
+
+    current_signals = [
+        "latest",
+        "recent",
+        "current",
+        "currently",
+        "today",
+        "tonight",
+        "this morning",
+        "this week",
+        "this month",
+        "right now",
+        "breaking",
+        "news",
+        "update",
+        "happening",
+        "going on",
+        "new",
+        "gist",
+        "wetin",
+        "sup"
+    ]
+
+    live_topics = [
         "football",
         "soccer",
         "premier league",
-        "epl",
         "champions league",
-        "europa league",
-        "la liga",
-        "serie a",
-        "bundesliga",
-        "ligue 1",
-        "arsenal",
-        "chelsea",
-        "liverpool",
-        "manchester united",
-        "manchester city",
-        "tottenham",
-        "newcastle",
-        "real madrid",
-        "barcelona",
-        "bayern",
-        "psg",
         "transfer",
         "transfers",
-        "transfer window",
-        "fixture",
-        "fixtures",
         "match",
-        "matches",
         "score",
-        "scores",
-        "league table",
-        "standings",
-        "goal",
-        "goals"
-    ]):
+        "result",
+        "league",
+        "player",
+        "president",
+        "government",
+        "election",
+        "world",
+        "country"
+    ]
 
-        if any(x in text for x in [
-            "latest",
-            "recent",
-            "today",
-            "currently",
-            "current",
-            "now",
-            "transfer",
-            "transfers",
-            "transfer news",
-            "latest transfer",
-            "recent transfer",
-            "new signing",
-            "latest signing",
-            "who won",
-            "who scored",
-            "result",
-            "results",
-            "score",
-            "scores"
-        ]):
-            return "live"
+    has_current_signal = any(
+        word in text
+        for word in current_signals
+    )
 
-        return "sports"
+    has_live_topic = any(
+        word in text
+        for word in live_topics
+    )
 
-    # Current information and news
-    if any(x in text for x in [
-        "latest",
-        "recent",
-        "currently",
-        "right now",
-        "today",
-        "yesterday",
-        "tomorrow",
-        "this morning",
-        "tonight",
-        "this week",
-        "this month",
-        "breaking",
-        "news",
-        "current events",
-        "latest news",
-        "recent news",
-        "latest update",
-        "recent update",
-        "current information",
-        "what happened today",
-        "what is happening"
-    ]):
+    if has_current_signal:
         return "live"
-# Education
-    if any(x in text for x in [
-        "study",
+
+    if (
+        has_live_topic
+        and (
+            "who" in text
+            or "what" in text
+            or "which" in text
+            or "where" in text
+            or "when" in text
+        )
+    ):
+        return "live"
+
+
+    # ----------------------------------------
+    # EDUCATION
+    # ----------------------------------------
+
+    education_signals = [
         "learn",
-        "lesson",
-        "teach me",
+        "teach",
         "explain",
+        "solve",
+        "calculate",
         "homework",
         "assignment",
+        "school",
+        "exam",
+        "test",
         "revision",
         "quiz",
-        "practice",
-        "exam",
         "question",
-        "mathematics",
-        "math",
-        "physics",
-        "chemistry",
-        "biology",
-        "english",
-        "literature",
-        "economics",
-        "government",
-        "geography",
-        "computer science",
         "waec",
         "jamb",
         "neco",
-        "sat"
-    ]):
+        "math",
+        "mathematics",
+        "physics",
+        "chemistry",
+        "biology",
+        "economics",
+        "government",
+        "literature",
+        "english",
+        "science"
+    ]
+
+    if any(
+        word in text
+        for word in education_signals
+    ):
         return "education"
 
-    # Programming
-    if any(x in text for x in [
+
+    # ----------------------------------------
+    # PROGRAMMING
+    # ----------------------------------------
+
+    programming_signals = [
         "python",
         "javascript",
         "html",
         "css",
         "programming",
-        "program",
         "coding",
         "code",
-        "debug",
-        "debugging",
         "software",
         "website",
-        "app development"
-    ]):
+        "app",
+        "bug",
+        "error",
+        "debug"
+    ]
+
+    if any(
+        word in text
+        for word in programming_signals
+    ):
         return "programming"
 
-    # Writing
-    if any(x in text for x in [
+
+    # ----------------------------------------
+    # WRITING
+    # ----------------------------------------
+
+    writing_signals = [
         "write",
         "rewrite",
         "rephrase",
-        "proofread",
         "essay",
         "letter",
+        "email",
         "caption",
         "story",
-        "email",
-        "message",
         "paragraph",
-        "speech",
-        "application"
-    ]):
+        "message"
+    ]
+
+    if any(
+        word in text
+        for word in writing_signals
+    ):
         return "writing"
+
+
+    # ----------------------------------------
+    # GENERAL
+    # ----------------------------------------
 
     return "general"
 
@@ -232,9 +268,6 @@ def route_request(user_input):
     return {
         "intent": intent,
 
-        # AYANFE uses its own systems first.
-        # Gemini is only the last-resort fallback
-        # for requests that cannot be handled locally.
-        "use_gemini": intent == "general"
+        # Gemini intentionally disabled.
+        "use_gemini": False
     }
-
