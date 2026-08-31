@@ -5,51 +5,29 @@
 import re
 
 
-# ============================================
-# NORMALIZE USER REQUEST
-# ============================================
-
 def normalize(text):
     text = text.lower().strip()
-
-    # Remove unnecessary punctuation
     text = re.sub(r"[!?.,]+", " ", text)
-
-    # Remove repeated spaces
     text = re.sub(r"\s+", " ", text)
-
     return text.strip()
 
-
-# ============================================
-# INTENT DETECTION
-# ============================================
 
 def detect_intent(user_input):
 
     text = normalize(user_input)
 
-    # ----------------------------------------
-    # IDENTITY
-    # ----------------------------------------
-
-    identity_phrases = [
+    # Identity
+    if any(x in text for x in [
         "who created you",
         "who made you",
         "who built you",
         "who is your creator",
         "who developed you"
-    ]
-
-    if any(phrase in text for phrase in identity_phrases):
+    ]):
         return "identity"
 
-
-    # ----------------------------------------
-    # GREETINGS / CASUAL
-    # ----------------------------------------
-
-    greeting_words = [
+    # Greetings
+    if any(x in text for x in [
         "hi",
         "hello",
         "hey",
@@ -60,70 +38,42 @@ def detect_intent(user_input):
         "how are you today",
         "how is it going",
         "how are things"
-    ]
-    if any(
-        text == word or text.startswith(word + " ")
-        for word in greeting_words
-    ):
+    ]):
         return "greeting"
 
-
-    # ----------------------------------------
-    # DATE / TIME
-    # ----------------------------------------
-
-    date_words = [
+    # Date and time
+    if any(x in text for x in [
         "today date",
         "todays date",
         "what date is it",
         "date today",
         "what day is today",
-        "which date is today"
-    ]
-
-    time_words = [
+        "which date is today",
         "what time is it",
         "current time",
         "time right now",
-        "what is the time",
-        "tell me the time"
-    ]
-
-    if any(word in text for word in date_words):
+        "what is the time"
+    ]):
         return "datetime"
 
-    if any(word in text for word in time_words):
-        return "datetime"
-
-
-    # ----------------------------------------
-    # YOUTUBE
-    # ----------------------------------------
-
-    youtube_words = [
+    # YouTube
+    if any(x in text for x in [
         "youtube",
         "youtube video",
         "video on youtube",
         "find me a video",
         "find a video"
-    ]
-
-    if any(word in text for word in youtube_words):
+    ]):
         return "youtube"
 
-
-    # ----------------------------------------
-    # FOOTBALL / SPORTS
-    # ----------------------------------------
-
-    sports_words = [
+    # Football and sports
+    if any(x in text for x in [
         "football",
         "soccer",
         "premier league",
         "epl",
         "champions league",
         "europa league",
-        "conference league",
         "la liga",
         "serie a",
         "bundesliga",
@@ -132,7 +82,6 @@ def detect_intent(user_input):
         "chelsea",
         "liverpool",
         "manchester united",
-        "man united",
         "manchester city",
         "tottenham",
         "newcastle",
@@ -142,8 +91,6 @@ def detect_intent(user_input):
         "psg",
         "transfer",
         "transfers",
-        "signed",
-        "signing",
         "transfer window",
         "fixture",
         "fixtures",
@@ -154,49 +101,36 @@ def detect_intent(user_input):
         "league table",
         "standings",
         "goal",
-        "goals",
-        "player"
-    ]
+        "goals"
+    ]):
 
-    if any(word in text for word in sports_words):
-
-        # Sports questions involving recent/current information
-        live_sports_words = [
+        if any(x in text for x in [
             "latest",
             "recent",
             "today",
             "currently",
             "current",
             "now",
-            "latest transfer",
-            "recent transfer",
-            "new transfer",
-            "latest signing",
-            "recent signing",
-            "who won",
-            "who scored",
-            "score",
-            "scores",
-            "result",
-            "results",
             "transfer",
             "transfers",
             "transfer news",
-            "transfer window",
-            "latest football news"
-        ]
-
-        if any(word in text for word in live_sports_words):
+            "latest transfer",
+            "recent transfer",
+            "new signing",
+            "latest signing",
+            "who won",
+            "who scored",
+            "result",
+            "results",
+            "score",
+            "scores"
+        ]):
             return "live"
 
         return "sports"
 
-
-    # ----------------------------------------
-    # GENERAL CURRENT INFORMATION / NEWS
-    # ----------------------------------------
-
-    live_words = [
+    # Current information and news
+    if any(x in text for x in [
         "latest",
         "recent",
         "currently",
@@ -218,17 +152,10 @@ def detect_intent(user_input):
         "current information",
         "what happened today",
         "what is happening"
-    ]
-
-    if any(word in text for word in live_words):
+    ]):
         return "live"
-
-
-    # ----------------------------------------
-    # EDUCATION
-    # ----------------------------------------
-
-    education_words = [
+# Education
+    if any(x in text for x in [
         "study",
         "learn",
         "lesson",
@@ -256,17 +183,11 @@ def detect_intent(user_input):
         "jamb",
         "neco",
         "sat"
-    ]
-
-if any(word in text for word in education_words):
+    ]):
         return "education"
 
-
-    # ----------------------------------------
-    # PROGRAMMING
-    # ----------------------------------------
-
-    programming_words = [
+    # Programming
+    if any(x in text for x in [
         "python",
         "javascript",
         "html",
@@ -280,17 +201,11 @@ if any(word in text for word in education_words):
         "software",
         "website",
         "app development"
-    ]
-
-    if any(word in text for word in programming_words):
+    ]):
         return "programming"
 
-
-    # ----------------------------------------
-    # WRITING
-    # ----------------------------------------
-
-    writing_words = [
+    # Writing
+    if any(x in text for x in [
         "write",
         "rewrite",
         "rephrase",
@@ -304,51 +219,22 @@ if any(word in text for word in education_words):
         "paragraph",
         "speech",
         "application"
-    ]
-
-    if any(word in text for word in writing_words):
+    ]):
         return "writing"
-
-
-    # ----------------------------------------
-    # GENERAL
-    # ----------------------------------------
 
     return "general"
 
-
-# ============================================
-# ROUTE REQUEST
-# ============================================
 
 def route_request(user_input):
 
     intent = detect_intent(user_input)
 
-    # ========================================
-    # AYANFE'S INDEPENDENCE RULE
-    # ========================================
-    #
-    # Built-in systems should handle:
-    #
-    # identity
-    # greetings
-    # date/time
-    # sports routing
-    # live information
-    # YouTube
-    # education
-    # programming
-    # writing
-    #
-    # Gemini should ONLY be used as a
-    # last-resort general AI fallback.
-    # ========================================
-
     return {
         "intent": intent,
 
+        # AYANFE uses its own systems first.
+        # Gemini is only the last-resort fallback
+        # for requests that cannot be handled locally.
         "use_gemini": intent == "general"
     }
-
 
